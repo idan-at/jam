@@ -6,7 +6,7 @@ use jm::run;
 fn main() {
     let cwd = current_dir().unwrap();
 
-    match run(&cwd) {
+    match run(cwd) {
         Ok(()) => println!("Done."),
         Err(err) => {
             eprintln!("{}", err);
