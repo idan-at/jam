@@ -1,37 +1,38 @@
+mod common;
 mod config;
+mod npm;
 mod workspace;
 
-use std::error::Error;
-use std::fs;
+use env_logger;
+use log::debug;
 use std::path::PathBuf;
 
+use common::read_manifest_file;
 use config::Config;
+use npm::PackageMetadata;
 use workspace::Workspace;
 
 pub fn run(root_path: PathBuf) -> Result<(), String> {
+    let _ = env_logger::try_init();
+
     let manifest_file_path = root_path.join("package.json");
     let manifest_file_content = read_manifest_file(manifest_file_path)?;
 
     let config = Config::new(root_path, &manifest_file_content)?;
-    println!("{:?}", config);
+    debug!("{:?}", config);
 
     let workspace = Workspace::from_config(&config)?;
+    debug!("{:?}", workspace);
 
-    println!("{:?}", workspace.packages);
+    let packages_versions = workspace.collect_packages_versions();
+    debug!("{:?}", packages_versions);
+
+    let package_metadata: Vec<PackageMetadata> = packages_versions
+        .keys()
+        .map(|package_name| npm::get_package_metadata(package_name))
+        .collect();
+
+    println!("{:?}", package_metadata);
 
     Ok(())
-}
-
-fn read_manifest_file<'a>(manifest_file_path: PathBuf) -> Result<String, String> {
-    if manifest_file_path.exists() {
-        match fs::read_to_string(&manifest_file_path) {
-            Ok(content) => Ok(content),
-            Err(err) => Err(String::from(err.description())),
-        }
-    } else {
-        Err(format!(
-            "Couldn't find manifest file in {:?}",
-            manifest_file_path
-        ))
-    }
 }

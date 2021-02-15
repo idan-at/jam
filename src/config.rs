@@ -16,7 +16,7 @@ impl Config {
     pub fn new(root_path: PathBuf, manifest_file_content: &str) -> Result<Config, String> {
         match serde_json::from_str::<Manifest>(&manifest_file_content) {
         Ok(manifest) => Ok(Config { root_path, patterns: manifest.workspaces }),
-        Err(_) => Err(format!(
+        Err(_) => Err(String::from(
           "Fail to parse manifest file, please make sure it is a valid JSON and 'workspaces' array exists",
         ))
       }
