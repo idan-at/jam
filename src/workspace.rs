@@ -13,7 +13,7 @@ pub struct Package {
     name: String,
     version: String,
     dependencies: Option<HashMap<String, String>>,
-    // TODO: not serialized properly
+    #[serde(alias = "devDependencies")]
     dev_dependencies: Option<HashMap<String, String>>,
 }
 

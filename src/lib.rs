@@ -15,7 +15,7 @@ use npm::PackageMetadata;
 use versions::get_minimal_package_versions;
 use workspace::Workspace;
 
-pub fn run(root_path: PathBuf) -> Result<(), String> {
+pub fn install(root_path: PathBuf) -> Result<(), String> {
     let _ = env_logger::try_init();
 
     let manifest_file_path = root_path.join("package.json");

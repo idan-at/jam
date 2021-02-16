@@ -1,12 +1,35 @@
 use std::env::current_dir;
 use std::process;
+use clap::{Clap};
 
-use jm::run;
+use jm::install;
+
+#[derive(Clap)]
+#[clap(version = "0.0")]
+struct Opts {
+    #[clap(subcommand)]
+    command: Command,
+}
+
+#[derive(Debug, Clap)]
+enum Command {
+    #[clap(version = "0.0", author = "Idan A.")]
+    I(Install),
+    #[clap(version = "0.0", author = "Idan A.")]
+    Install(Install),
+}
+
+#[derive(Debug, Clap)]
+struct Install {}
 
 fn main() {
+    let opts: Opts = Opts::parse();
+
     let cwd = current_dir().unwrap();
 
-    match run(cwd) {
+    println!("{:?}", opts.command);
+
+    match install(cwd) {
         Ok(()) => println!("Done."),
         Err(err) => {
             eprintln!("{}", err);
