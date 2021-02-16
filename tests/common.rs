@@ -19,7 +19,7 @@ pub fn given_manifest_file_does_not_exist() -> TempDir {
 
 pub fn given_valid_manifest_file() -> TempDir {
     let tmp_dir = create_tmp_dir();
-    with_manifest_file(&tmp_dir, r#"{ "workspaces": [] }"#);
+    with_manifest_file(&tmp_dir, r#"{ "workspaces": ["**/*"] }"#);
 
     tmp_dir
 }

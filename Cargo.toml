@@ -13,6 +13,7 @@ log = "0.4"
 env_logger = "0.8.3"
 reqwest = { version = "0.11.0", features = ["blocking", "json"] }
 urlencoding = "1.1.1"
+semver = "0.11.0"
 
 [dev-dependencies]
 tempdir = "0.3"

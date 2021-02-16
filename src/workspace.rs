@@ -6,11 +6,14 @@ use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
+const IGNORE_PATTERS: [&str; 1] = ["!**/node_modules/**"];
+
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct Package {
     name: String,
     version: String,
     dependencies: Option<HashMap<String, String>>,
+    // TODO: not serialized properly
     dev_dependencies: Option<HashMap<String, String>>,
 }
 
@@ -29,33 +32,32 @@ impl Workspace {
     pub fn from_config(config: &Config) -> Result<Workspace, String> {
         let mut workspace_packages: Vec<WorkspacePackage> = Vec::new();
 
-        let paths: Vec<String> = config
+        let mut paths: Vec<String> = config
             .patterns
             .iter()
-            .map(|pattern| String::from(format!("{}/package.json", pattern)))
+            .map(|pattern| format!("{}/package.json", pattern))
             .collect();
+
+        paths.extend(
+            IGNORE_PATTERS
+                .iter()
+                .map(|path| String::from(*path))
+                .collect::<Vec<String>>(),
+        );
 
         let walker = GlobWalkerBuilder::from_patterns(&config.root_path, &paths).build();
 
         match walker {
             Ok(walker) => {
                 for entry in walker.into_iter().filter_map(Result::ok) {
-                    if entry
-                        .path()
-                        .components()
-                        .all(|component| component.as_os_str() != "node_modules")
-                    {
-                        let manifest_file_path = entry.path().to_path_buf();
-                        let manifest_file_content = read_manifest_file(manifest_file_path.clone())?;
-                        match serde_json::from_str::<Package>(&manifest_file_content) {
-                            Ok(package) => workspace_packages.push(WorkspacePackage {
-                                base_path: entry.path().parent().unwrap().to_path_buf(),
-                                package,
-                            }),
-                            Err(_) => {
-                                return Err(format!("Fail to parse {:?}", manifest_file_path,))
-                            }
-                        }
+                    let manifest_file_path = entry.path().to_path_buf();
+                    let manifest_file_content = read_manifest_file(manifest_file_path.clone())?;
+                    match serde_json::from_str::<Package>(&manifest_file_content) {
+                        Ok(package) => workspace_packages.push(WorkspacePackage {
+                            base_path: entry.path().parent().unwrap().to_path_buf(),
+                            package,
+                        }),
+                        Err(_) => return Err(format!("Fail to parse {:?}", manifest_file_path,)),
                     }
                 }
 
@@ -92,7 +94,8 @@ impl Workspace {
                 if let Some(versions) = results.get_mut(package_name) {
                     versions.insert(package_version.to_string());
                 } else {
-                    let versions_set: HashSet<String> = vec![package_version.to_string()].iter().cloned().collect();
+                    let versions_set: HashSet<String> =
+                        vec![package_version.to_string()].iter().cloned().collect();
 
                     results.insert(package_name.to_string(), versions_set);
                 }
@@ -376,7 +379,10 @@ mod tests {
             ),
             (
                 "dep1".to_string(),
-                vec!["~1.0.0".to_string(), "~2.0.0".to_string()].iter().cloned().collect(),
+                vec!["~1.0.0".to_string(), "~2.0.0".to_string()]
+                    .iter()
+                    .cloned()
+                    .collect(),
             ),
         ]
         .into_iter()
