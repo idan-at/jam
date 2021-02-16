@@ -1,6 +1,6 @@
+use clap::Clap;
 use std::env::current_dir;
 use std::process;
-use clap::{Clap};
 
 use jm::install;
 

@@ -28,20 +28,26 @@ fn translate_dist_tag_to_version(
 fn filter_compatible_versions(
     requested_version: &VersionReq,
     package_metadata: &PackageMetadata,
-) -> HashSet<String> {
+) -> HashSet<VersionReq> {
     package_metadata
         .versions
         .keys()
         .filter(|version| requested_version.matches(&Version::from_str(version).unwrap()))
-        .map(|version| version.to_string())
+        .map(|version| VersionReq::parse_compat(version, Compat::Npm).unwrap())
         .collect()
 }
 
-fn get_best_matching_version(versions: &HashSet<String>) -> String {
-    let mut sorted_versions = versions.into_iter().collect::<Vec<&String>>();
+fn get_best_matching_version(versions: &HashSet<VersionReq>) -> String {
+    println!("choosing from {:?}", versions);
+
+    let mut sorted_versions = versions.into_iter().collect::<Vec<&VersionReq>>();
     sorted_versions.sort();
 
-    sorted_versions.first().unwrap().to_string()
+    println!("sorted {:?}", versions);
+
+    println!("chose {}", sorted_versions.last().unwrap().to_string());
+
+    sorted_versions.last().unwrap().to_string()
 }
 
 pub fn get_minimal_package_versions(
@@ -66,6 +72,8 @@ pub fn get_minimal_package_versions(
 
             let compatible_versions =
                 filter_compatible_versions(&package_requested_version, &package_metadata);
+
+            println!("for package {}", package_name);
 
             let best_matching_version = get_best_matching_version(&compatible_versions);
 
@@ -135,7 +143,9 @@ mod tests {
         let packages_metadata = with_package_metadata();
 
         let result = filter_compatible_versions(&requested_version, &packages_metadata);
-        let expected = vec!["1.0.1".to_string()].into_iter().collect();
+        let expected = vec![VersionReq::parse_compat("1.0.1", Compat::Npm).unwrap()]
+            .into_iter()
+            .collect();
 
         assert_eq!(result, expected);
     }
@@ -146,9 +156,12 @@ mod tests {
         let packages_metadata = with_package_metadata();
 
         let result = filter_compatible_versions(&requested_version, &packages_metadata);
-        let expected = vec!["1.0.1".to_string(), "1.1.0".to_string()]
-            .into_iter()
-            .collect();
+        let expected = vec![
+            VersionReq::parse_compat("1.0.1", Compat::Npm).unwrap(),
+            VersionReq::parse_compat("1.1.0", Compat::Npm).unwrap(),
+        ]
+        .into_iter()
+        .collect();
 
         assert_eq!(result, expected);
     }
@@ -160,9 +173,9 @@ mod tests {
 
         let result = filter_compatible_versions(&requested_version, &packages_metadata);
         let expected = vec![
-            "2.0.0".to_string(),
-            "1.1.0".to_string(),
-            "1.0.1".to_string(),
+            VersionReq::parse_compat("2.0.0", Compat::Npm).unwrap(),
+            VersionReq::parse_compat("1.1.0", Compat::Npm).unwrap(),
+            VersionReq::parse_compat("1.0.1", Compat::Npm).unwrap(),
         ]
         .into_iter()
         .collect();
@@ -176,9 +189,12 @@ mod tests {
         let packages_metadata = with_package_metadata();
 
         let result = filter_compatible_versions(&requested_version, &packages_metadata);
-        let expected = vec!["2.0.0".to_string(), "1.1.0".to_string()]
-            .into_iter()
-            .collect();
+        let expected = vec![
+            VersionReq::parse_compat("2.0.0", Compat::Npm).unwrap(),
+            VersionReq::parse_compat("1.1.0", Compat::Npm).unwrap(),
+        ]
+        .into_iter()
+        .collect();
 
         assert_eq!(result, expected);
     }
@@ -190,9 +206,9 @@ mod tests {
 
         let result = filter_compatible_versions(&requested_version, &packages_metadata);
         let expected = vec![
-            "2.0.0".to_string(),
-            "1.1.0".to_string(),
-            "1.0.1".to_string(),
+            VersionReq::parse_compat("2.0.0", Compat::Npm).unwrap(),
+            VersionReq::parse_compat("1.1.0", Compat::Npm).unwrap(),
+            VersionReq::parse_compat("1.0.1", Compat::Npm).unwrap(),
         ]
         .into_iter()
         .collect();
@@ -206,9 +222,12 @@ mod tests {
         let packages_metadata = with_package_metadata();
 
         let result = filter_compatible_versions(&requested_version, &packages_metadata);
-        let expected = vec!["1.1.0".to_string(), "1.0.1".to_string()]
-            .into_iter()
-            .collect();
+        let expected = vec![
+            VersionReq::parse_compat("1.0.1", Compat::Npm).unwrap(),
+            VersionReq::parse_compat("1.1.0", Compat::Npm).unwrap(),
+        ]
+        .into_iter()
+        .collect();
 
         assert_eq!(result, expected);
     }
@@ -220,9 +239,9 @@ mod tests {
 
         let result = filter_compatible_versions(&requested_version, &packages_metadata);
         let expected = vec![
-            "2.0.0".to_string(),
-            "1.1.0".to_string(),
-            "1.0.1".to_string(),
+            VersionReq::parse_compat("2.0.0", Compat::Npm).unwrap(),
+            VersionReq::parse_compat("1.1.0", Compat::Npm).unwrap(),
+            VersionReq::parse_compat("1.0.1", Compat::Npm).unwrap(),
         ]
         .into_iter()
         .collect();
@@ -236,7 +255,9 @@ mod tests {
         let packages_metadata = with_package_metadata();
 
         let result = filter_compatible_versions(&requested_version, &packages_metadata);
-        let expected = vec!["1.0.1".to_string()].into_iter().collect();
+        let expected = vec![VersionReq::parse_compat("1.0.1", Compat::Npm).unwrap()]
+            .into_iter()
+            .collect();
 
         assert_eq!(result, expected);
     }
@@ -263,7 +284,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Failed to resolve dist tag non-existing-dist-tag of package some-package")]
+    #[should_panic(
+        expected = "Failed to resolve dist tag non-existing-dist-tag of package some-package"
+    )]
     fn translate_dist_tag_to_version_does_not_exist() {
         let package_name = "some-package";
         let package_metadata = with_package_metadata();
