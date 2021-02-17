@@ -22,14 +22,15 @@ enum Command {
 #[derive(Debug, Clap)]
 struct Install {}
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let opts: Opts = Opts::parse();
 
     let cwd = current_dir().unwrap();
 
     println!("{:?}", opts.command);
 
-    match install(cwd) {
+    match install(cwd).await {
         Ok(()) => println!("Done."),
         Err(err) => {
             eprintln!("{}", err);

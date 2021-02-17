@@ -52,13 +52,16 @@ fn get_best_matching_version(versions: &HashSet<VersionReq>) -> String {
 
 pub fn get_minimal_package_versions(
     packages_requested_versions: HashMap<String, HashSet<String>>,
-    packages_metadata: &HashMap<String, PackageMetadata>,
+    packages_metadata: &Vec<PackageMetadata>,
 ) -> HashMap<String, HashSet<String>> {
     let mut results: HashMap<String, HashSet<String>> = HashMap::new();
 
     for (package_name, package_requested_versions) in packages_requested_versions {
         for version_or_dist_tag in package_requested_versions {
-            let package_metadata = packages_metadata.get(&package_name).unwrap();
+            let package_metadata = packages_metadata
+                .iter()
+                .find(|package_metadata| package_metadata.package_name == package_name)
+                .unwrap();
 
             let package_requested_version =
                 match VersionReq::parse_compat(&version_or_dist_tag, Compat::Npm) {
@@ -98,6 +101,7 @@ mod tests {
 
     fn with_package_metadata() -> PackageMetadata {
         PackageMetadata {
+            package_name: "some-package".to_string(),
             dist_tags: Some(
                 vec![("latest".to_string(), "2.0.0".to_string())]
                     .into_iter()
@@ -275,10 +279,13 @@ mod tests {
 
     #[test]
     fn translate_dist_tag_to_version_exists() {
-        let package_name = "some-package";
         let package_metadata = with_package_metadata();
 
-        let result = translate_dist_tag_to_version(&package_name, "latest", &package_metadata);
+        let result = translate_dist_tag_to_version(
+            &package_metadata.package_name,
+            "latest",
+            &package_metadata,
+        );
 
         assert_eq!(result, VersionReq::from_str("2.0.0").unwrap());
     }
@@ -288,9 +295,12 @@ mod tests {
         expected = "Failed to resolve dist tag non-existing-dist-tag of package some-package"
     )]
     fn translate_dist_tag_to_version_does_not_exist() {
-        let package_name = "some-package";
         let package_metadata = with_package_metadata();
 
-        translate_dist_tag_to_version(&package_name, "non-existing-dist-tag", &package_metadata);
+        translate_dist_tag_to_version(
+            &package_metadata.package_name,
+            "non-existing-dist-tag",
+            &package_metadata,
+        );
     }
 }
