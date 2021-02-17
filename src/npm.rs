@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug, info};
 use reqwest::header;
 use reqwest::Client;
 use serde::Deserialize;
@@ -28,19 +28,21 @@ pub struct PackageMetadata {
     pub versions: HashMap<String, VersionMetadata>,
 }
 
-pub struct NpmFacade {
+pub struct Fetcher {
     client: Client,
 }
 
-impl NpmFacade {
-    pub fn new() -> NpmFacade {
-        NpmFacade {
+impl Fetcher {
+    pub fn new() -> Fetcher {
+        Fetcher {
             client: Client::new(),
         }
     }
 
     pub async fn get_package_metadata(&self, package_name: &str) -> PackageMetadata {
         let url = format!("http://npm.dev.wixpress.com/{}", encode(&package_name));
+
+        info!("Getting package metadata from {}", url);
 
         // TODO: remove unwrap and handle network errors
         let response = self
@@ -66,6 +68,7 @@ impl NpmFacade {
                 response.status()
             );
             // TODO: retry?
+            // TODO: return result instead
             panic!(format!(
                 "Failed to fetch package metadata for {}",
                 package_name

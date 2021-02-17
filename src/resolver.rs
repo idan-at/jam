@@ -38,14 +38,8 @@ fn filter_compatible_versions(
 }
 
 fn get_best_matching_version(versions: &HashSet<VersionReq>) -> String {
-    println!("choosing from {:?}", versions);
-
     let mut sorted_versions = versions.into_iter().collect::<Vec<&VersionReq>>();
     sorted_versions.sort();
-
-    println!("sorted {:?}", versions);
-
-    println!("chose {}", sorted_versions.last().unwrap().to_string());
 
     sorted_versions.last().unwrap().to_string()
 }
@@ -54,6 +48,7 @@ pub fn get_minimal_package_versions(
     packages_requested_versions: HashMap<String, HashSet<String>>,
     packages_metadata: &Vec<PackageMetadata>,
 ) -> HashMap<String, HashSet<String>> {
+    // TODO: create a hashmap<package_name, package_metadata> for better performance
     let mut results: HashMap<String, HashSet<String>> = HashMap::new();
 
     for (package_name, package_requested_versions) in packages_requested_versions {
@@ -75,8 +70,6 @@ pub fn get_minimal_package_versions(
 
             let compatible_versions =
                 filter_compatible_versions(&package_requested_version, &package_metadata);
-
-            println!("for package {}", package_name);
 
             let best_matching_version = get_best_matching_version(&compatible_versions);
 

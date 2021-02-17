@@ -1,7 +1,13 @@
+mod commands;
+
 use clap::Clap;
+use env_logger;
+use log::info;
 use std::env::current_dir;
+use std::path::PathBuf;
 use std::process;
 
+use crate::commands::Command;
 use jm::install;
 
 #[derive(Clap)]
@@ -11,26 +17,22 @@ struct Opts {
     command: Command,
 }
 
-#[derive(Debug, Clap)]
-enum Command {
-    #[clap(version = "0.0", author = "Idan A.")]
-    I(Install),
-    #[clap(version = "0.0", author = "Idan A.")]
-    Install(Install),
+async fn run(cwd: PathBuf, opts: Opts) -> Result<(), String> {
+    match opts.command {
+        _ => install(cwd).await,
+    }
 }
-
-#[derive(Debug, Clap)]
-struct Install {}
 
 #[tokio::main]
 async fn main() {
+    let _ = env_logger::try_init();
     let opts: Opts = Opts::parse();
 
     let cwd = current_dir().unwrap();
 
-    println!("{:?}", opts.command);
+    info!("Running command {} from {:?}", opts.command, cwd);
 
-    match install(cwd).await {
+    match run(cwd, opts).await {
         Ok(()) => println!("Done."),
         Err(err) => {
             eprintln!("{}", err);
