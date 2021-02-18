@@ -1,36 +1,21 @@
-mod commands;
 
-use clap::Clap;
 use env_logger;
-use log::info;
+use log::debug;
 use std::env::current_dir;
-use std::path::PathBuf;
 use std::process;
 
-use crate::commands::Command;
-use jm::install;
+use clap::Clap;
 
-#[derive(Clap)]
-#[clap(version = "0.0")]
-struct Opts {
-    #[clap(subcommand)]
-    command: Command,
-}
-
-async fn run(cwd: PathBuf, opts: Opts) -> Result<(), String> {
-    match opts.command {
-        _ => install(cwd).await,
-    }
-}
+use jm::run;
+use jm::cli_opts::Opts;
 
 #[tokio::main]
 async fn main() {
     let _ = env_logger::try_init();
+    let cwd = current_dir().unwrap();
     let opts: Opts = Opts::parse();
 
-    let cwd = current_dir().unwrap();
-
-    info!("Running command {} from {:?}", opts.command, cwd);
+    debug!("Running command {} from {:?}", opts.command, cwd);
 
     match run(cwd, opts).await {
         Ok(()) => println!("Done."),

@@ -8,7 +8,7 @@ fn create_tmp_dir() -> TempDir {
 }
 
 fn with_manifest_file(dir: &TempDir, content: &str) {
-    let file_path = dir.path().join("package.json");
+    let file_path = dir.path().join("jm.json");
 
     fs::write(file_path, content).unwrap();
 }

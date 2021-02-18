@@ -1,6 +1,13 @@
 use clap::Clap;
 use std::fmt::{Display, Error, Formatter};
 
+#[derive(Clap)]
+#[clap(version = "0.0")]
+pub struct Opts {
+    #[clap(subcommand)]
+    pub command: Command,
+}
+
 #[derive(Debug, Clap)]
 pub enum Command {
     #[clap(version = "0.0", author = "Idan A.")]
