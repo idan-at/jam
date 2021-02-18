@@ -1,5 +1,6 @@
 [workspace]
 
 members = [
-  "jm"
+  "jm",
+  "jm-test-utils"
 ]

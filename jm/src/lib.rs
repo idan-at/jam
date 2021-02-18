@@ -7,19 +7,19 @@ mod resolver;
 mod root_locator;
 mod workspace;
 mod writer;
+mod commands;
 
 use crate::cli_opts::Opts;
-use futures::StreamExt;
 use log::debug;
 use std::path::PathBuf;
 
 use common::read_manifest_file;
 use config::Config;
-use npm::{Fetcher, PackageMetadata};
-use resolver::get_minimal_package_versions;
 use root_locator::find_root_dir;
 use workspace::Workspace;
 use writer::Writer;
+use commands::install::{install};
+use cli_opts::Command;
 
 pub async fn run(cwd: PathBuf, opts: Opts) -> Result<(), String> {
     let root_path = find_root_dir(cwd)?;
@@ -32,34 +32,6 @@ pub async fn run(cwd: PathBuf, opts: Opts) -> Result<(), String> {
     debug!("{:?}", config);
 
     match opts.command {
-        _ => install(&config).await,
+        Command::Install(_) | Command::I(_) => install(&config).await,
     }
-}
-
-async fn install(config: &Config) -> Result<(), String> {
-    let workspace = Workspace::from_config(config)?;
-    debug!("{:?}", workspace);
-
-    let packages_requested_versions = workspace.collect_packages_versions();
-    debug!("{:?}", packages_requested_versions);
-
-    let fetcher = Fetcher::new();
-    let packages_metadata: Vec<PackageMetadata> = futures::stream::iter(
-        packages_requested_versions
-            .keys()
-            .map(|package_name| fetcher.get_package_metadata(package_name)),
-    )
-    // TODO: make 8 configurable
-    .buffer_unordered(8)
-    .collect()
-    .await;
-
-    let packages_versions_to_fetch =
-        get_minimal_package_versions(packages_requested_versions, &packages_metadata);
-    debug!("{:?}", packages_versions_to_fetch);
-
-    let writer = Writer::new(&config);
-    writer.init();
-
-    Ok(())
 }

@@ -507,14 +507,22 @@ dependencies = [
  "env_logger",
  "futures",
  "globwalk",
+ "jm-test-utils",
  "log",
  "reqwest",
  "semver",
  "serde",
  "serde_json",
- "tempdir",
  "tokio",
  "urlencoding",
+]
+
+[[package]]
+name = "jm-test-utils"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "tempdir",
 ]
 
 [[package]]

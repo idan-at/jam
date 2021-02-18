@@ -26,6 +26,7 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use jm_test_utils::*;
 
     #[test]
     fn fails_on_invalid_manifest_content() {
@@ -40,9 +41,9 @@ mod tests {
     #[test]
     fn succeeds_on_valid_manifest_file() {
         let root_path = PathBuf::new();
-        let content = r#"{ "workspaces": [ "packages/**", "not-in-packages/foo" ]}"#;
+        let content = get_manifest_file_content(vec!["packages/**", "not-in-packages/foo"]);
 
-        let result = Config::new(root_path.clone(), content);
+        let result = Config::new(root_path.clone(), &content);
 
         assert_eq!(
             result,

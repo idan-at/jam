@@ -18,4 +18,4 @@ tokio = { version = "1.2", features = ["full"] }
 futures = "0.3.12"
 
 [dev-dependencies]
-tempdir = "0.3"
+jm-test-utils = { path = "../jm-test-utils" }

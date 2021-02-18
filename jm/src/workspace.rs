@@ -107,7 +107,7 @@ impl Workspace {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::create_temp_dir;
+    use jm_test_utils::*;
     use std::fs;
 
     fn metadata_file_content(name: &str, version: &str) -> String {
@@ -131,7 +131,7 @@ mod tests {
 
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
-            r#"{ "workspaces": ["**/*"] }"#,
+            &get_manifest_file_content(vec!["**/*"]),
         )
         .unwrap();
 
@@ -152,7 +152,7 @@ mod tests {
 
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
-            r#"{ "workspaces": ["?"] }"#,
+            &get_manifest_file_content(vec!["?"])
         )
         .unwrap();
 
@@ -188,7 +188,7 @@ mod tests {
 
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
-            r#"{ "workspaces": ["**/*"] }"#,
+            &get_manifest_file_content(vec!["**/*"])
         )
         .unwrap();
 
@@ -243,7 +243,7 @@ mod tests {
 
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
-            r#"{ "workspaces": ["**/*", "!**/p2/**"] }"#,
+            &get_manifest_file_content(vec!["**/*", "!**/p2/**"])
         )
         .unwrap();
 
@@ -291,7 +291,7 @@ mod tests {
 
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
-            r#"{ "workspaces": ["**/*"] }"#,
+            &get_manifest_file_content(vec!["**/*"])
         )
         .unwrap();
 

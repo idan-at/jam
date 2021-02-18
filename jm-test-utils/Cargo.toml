@@ -1,0 +1,9 @@
+[package]
+name = "jm-test-utils"
+version = "0.1.0"
+authors = ["Idan Attias <idana@wix.com>"]
+edition = "2018"
+
+[dependencies]
+tempdir = "0.3"
+futures = "0.3.12"
