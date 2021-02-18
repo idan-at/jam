@@ -107,14 +107,8 @@ impl Workspace {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::create_temp_dir;
     use std::fs;
-    use tempdir::TempDir;
-
-    fn create_tmp_dir() -> TempDir {
-        let tmp_dir = TempDir::new("jm_workspaces_fixtures").unwrap();
-
-        tmp_dir
-    }
 
     fn metadata_file_content(name: &str, version: &str) -> String {
         String::from(format!(

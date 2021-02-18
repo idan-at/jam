@@ -1,8 +1,10 @@
 pub mod cli_opts;
+
 mod common;
 mod config;
 mod npm;
 mod resolver;
+mod root_locator;
 mod workspace;
 mod writer;
 
@@ -15,12 +17,12 @@ use common::read_manifest_file;
 use config::Config;
 use npm::{Fetcher, PackageMetadata};
 use resolver::get_minimal_package_versions;
+use root_locator::find_root_dir;
 use workspace::Workspace;
 use writer::Writer;
 
 pub async fn run(cwd: PathBuf, opts: Opts) -> Result<(), String> {
-    // TODO: find the root path from cwd by going back until finding jm.json
-    let root_path = cwd;
+    let root_path = find_root_dir(cwd)?;
     debug!("Root path {:?}", root_path);
 
     let manifest_file_path = root_path.join("jm.json");

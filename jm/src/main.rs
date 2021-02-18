@@ -1,4 +1,3 @@
-
 use env_logger;
 use log::debug;
 use std::env::current_dir;
@@ -6,8 +5,8 @@ use std::process;
 
 use clap::Clap;
 
-use jm::run;
 use jm::cli_opts::Opts;
+use jm::run;
 
 #[tokio::main]
 async fn main() {

@@ -2,8 +2,8 @@ mod common;
 
 use common::*;
 
+use jm::cli_opts::{Command, Install, Opts};
 use jm::run;
-use jm::cli_opts::{Opts, Command, Install};
 
 #[tokio::test]
 async fn fails_on_missing_manifest_file() {
@@ -13,9 +13,8 @@ async fn fails_on_missing_manifest_file() {
     };
 
     let result = run(path.path().to_path_buf().clone(), opts).await;
-    let expected = Err(format!(
-        "Couldn't find manifest file in {:?}",
-        path.path().join("jm.json")
+    let expected = Err(String::from(
+        "Couldn't find root directory. Make sure jm.json exists",
     ));
 
     assert_eq!(result, expected);
