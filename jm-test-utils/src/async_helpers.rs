@@ -1,6 +1,6 @@
 use futures::Future;
-use std::path::PathBuf;
 use std::fs;
+use std::path::PathBuf;
 
 use crate::sync_helpers::*;
 
@@ -31,5 +31,6 @@ where
         fs::write(file_path, get_manifest_file_content(vec!["**/*"])).unwrap();
 
         func(path).await;
-    }).await;
+    })
+    .await;
 }

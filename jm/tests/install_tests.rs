@@ -15,7 +15,8 @@ async fn fails_on_missing_manifest_file() {
         ));
 
         assert_eq!(result, expected);
-    }).await;
+    })
+    .await;
 }
 
 #[tokio::test]
@@ -28,5 +29,6 @@ async fn succeeds_when_manifest_file_is_valid() {
         let result = run(path.to_path_buf(), opts).await;
 
         assert_eq!(result, Ok(()))
-    }).await;
+    })
+    .await;
 }

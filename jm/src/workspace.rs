@@ -1,5 +1,6 @@
 use crate::common::read_manifest_file;
 use crate::config::Config;
+use crate::package::Package;
 
 use globwalk::GlobWalkerBuilder;
 use serde::Deserialize;
@@ -9,12 +10,23 @@ use std::path::PathBuf;
 const IGNORE_PATTERS: [&str; 1] = ["!**/node_modules/**"];
 
 #[derive(Debug, PartialEq, Deserialize)]
-pub struct Package {
+struct PackageJson {
     name: String,
     version: String,
     dependencies: Option<HashMap<String, String>>,
     #[serde(alias = "devDependencies")]
     dev_dependencies: Option<HashMap<String, String>>,
+}
+
+impl PackageJson {
+    pub fn to_package(self) -> Package {
+        Package {
+            name: self.name,
+            version: self.version,
+            dependencies: self.dependencies.unwrap_or(HashMap::new()),
+            dev_dependencies: self.dev_dependencies.unwrap_or(HashMap::new()),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -52,10 +64,10 @@ impl Workspace {
                 for entry in walker.into_iter().filter_map(Result::ok) {
                     let manifest_file_path = entry.path().to_path_buf();
                     let manifest_file_content = read_manifest_file(manifest_file_path.clone())?;
-                    match serde_json::from_str::<Package>(&manifest_file_content) {
-                        Ok(package) => workspace_packages.push(WorkspacePackage {
+                    match serde_json::from_str::<PackageJson>(&manifest_file_content) {
+                        Ok(package_json) => workspace_packages.push(WorkspacePackage {
                             base_path: entry.path().parent().unwrap().to_path_buf(),
-                            package,
+                            package: package_json.to_package(),
                         }),
                         Err(_) => return Err(format!("Fail to parse {:?}", manifest_file_path,)),
                     }
@@ -87,18 +99,16 @@ impl Workspace {
     fn append_packages_versions(
         &self,
         results: &mut HashMap<String, HashSet<String>>,
-        dependencies: &Option<HashMap<String, String>>,
+        dependencies: &HashMap<String, String>,
     ) {
-        if let Some(dependencies) = dependencies {
-            for (package_name, package_version) in dependencies {
-                if let Some(versions) = results.get_mut(package_name) {
-                    versions.insert(package_version.to_string());
-                } else {
-                    let versions_set: HashSet<String> =
-                        vec![package_version.to_string()].iter().cloned().collect();
+        for (package_name, package_version) in dependencies {
+            if let Some(versions) = results.get_mut(package_name) {
+                versions.insert(package_version.to_string());
+            } else {
+                let versions_set: HashSet<String> =
+                    vec![package_version.to_string()].iter().cloned().collect();
 
-                    results.insert(package_name.to_string(), versions_set);
-                }
+                results.insert(package_name.to_string(), versions_set);
             }
         }
     }
@@ -152,7 +162,7 @@ mod tests {
 
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
-            &get_manifest_file_content(vec!["?"])
+            &get_manifest_file_content(vec!["?"]),
         )
         .unwrap();
 
@@ -188,7 +198,7 @@ mod tests {
 
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
-            &get_manifest_file_content(vec!["**/*"])
+            &get_manifest_file_content(vec!["**/*"]),
         )
         .unwrap();
 
@@ -202,8 +212,8 @@ mod tests {
                         package: Package {
                             name: String::from("p2"),
                             version: String::from("1.1.0"),
-                            dependencies: None,
-                            dev_dependencies: None
+                            dependencies: HashMap::new(),
+                            dev_dependencies: HashMap::new(),
                         },
                         base_path: p2_base_path
                     },
@@ -211,8 +221,8 @@ mod tests {
                         package: Package {
                             name: String::from("p1"),
                             version: String::from("1.0.0"),
-                            dependencies: None,
-                            dev_dependencies: None
+                            dependencies: HashMap::new(),
+                            dev_dependencies: HashMap::new(),
                         },
                         base_path: p1_base_path
                     }
@@ -243,7 +253,7 @@ mod tests {
 
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
-            &get_manifest_file_content(vec!["**/*", "!**/p2/**"])
+            &get_manifest_file_content(vec!["**/*", "!**/p2/**"]),
         )
         .unwrap();
 
@@ -256,8 +266,8 @@ mod tests {
                     package: Package {
                         name: String::from("p1"),
                         version: String::from("1.0.0"),
-                        dependencies: None,
-                        dev_dependencies: None
+                        dependencies: HashMap::new(),
+                        dev_dependencies: HashMap::new(),
                     },
                     base_path: p1_base_path
                 }]
@@ -291,7 +301,7 @@ mod tests {
 
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
-            &get_manifest_file_content(vec!["**/*"])
+            &get_manifest_file_content(vec!["**/*"]),
         )
         .unwrap();
 
@@ -304,8 +314,8 @@ mod tests {
                     package: Package {
                         name: String::from("p1"),
                         version: String::from("1.0.0"),
-                        dependencies: None,
-                        dev_dependencies: None
+                        dependencies: HashMap::new(),
+                        dev_dependencies: HashMap::new(),
                     },
                     base_path: p1_base_path
                 }]
@@ -321,19 +331,15 @@ mod tests {
                     package: Package {
                         name: String::from("p1"),
                         version: String::from("1.0.0"),
-                        dependencies: Some(
-                            vec![
-                                ("dep1".to_string(), "~1.0.0".to_string()),
-                                ("dep2".to_string(), "~1.0.0".to_string()),
-                            ]
+                        dependencies: vec![
+                            ("dep1".to_string(), "~1.0.0".to_string()),
+                            ("dep2".to_string(), "~1.0.0".to_string()),
+                        ]
+                        .into_iter()
+                        .collect(),
+                        dev_dependencies: vec![("dep3".to_string(), "1.0.0".to_string())]
                             .into_iter()
                             .collect(),
-                        ),
-                        dev_dependencies: Some(
-                            vec![("dep3".to_string(), "1.0.0".to_string())]
-                                .into_iter()
-                                .collect(),
-                        ),
                     },
                     base_path: PathBuf::from("/p1"),
                 },
@@ -341,19 +347,15 @@ mod tests {
                     package: Package {
                         name: String::from("p2"),
                         version: String::from("1.0.0"),
-                        dependencies: Some(
-                            vec![
-                                ("dep3".to_string(), "1.0.0".to_string()),
-                                ("dep2".to_string(), "~1.0.0".to_string()),
-                            ]
+                        dependencies: vec![
+                            ("dep3".to_string(), "1.0.0".to_string()),
+                            ("dep2".to_string(), "~1.0.0".to_string()),
+                        ]
+                        .into_iter()
+                        .collect(),
+                        dev_dependencies: vec![("dep1".to_string(), "~2.0.0".to_string())]
                             .into_iter()
                             .collect(),
-                        ),
-                        dev_dependencies: Some(
-                            vec![("dep1".to_string(), "~2.0.0".to_string())]
-                                .into_iter()
-                                .collect(),
-                        ),
                     },
                     base_path: PathBuf::from("/p2"),
                 },

@@ -30,7 +30,12 @@ mod tests {
 
         let result = find_root_dir(tmp_dir.path().to_path_buf());
 
-        assert_eq!(result, Err(String::from("Couldn't find root directory. Make sure jm.json exists")));
+        assert_eq!(
+            result,
+            Err(String::from(
+                "Couldn't find root directory. Make sure jm.json exists"
+            ))
+        );
     }
 
     #[test]
