@@ -44,35 +44,30 @@ impl Fetcher {
 
         info!("Getting package metadata from {}", url);
 
-        // TODO: remove unwrap and handle network errors
-        let response = self
+        match self
             .client
             .get(&url)
             .header(header::ACCEPT, NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE)
             .send()
             .await
-            .unwrap();
+        {
+            Ok(response) if response.status().is_success() => {
+                let mut metadata: PackageMetadata = response.json().await.expect(&format!(
+                    "Unexpected package metadata response for: {}",
+                    package_name
+                ));
+                metadata.package_name = package_name.to_string();
 
-        if response.status().is_success() {
-            let mut metadata: PackageMetadata = response.json().await.expect(&format!(
-                "Unexpected package metadata response for: {}",
-                package_name
-            ));
-            metadata.package_name = package_name.to_string();
-
-            metadata
-        } else {
-            debug!(
-                "Failed to get package metadata for {}. status: {}",
-                package_name,
-                response.status()
-            );
-            // TODO: retry?
-            // TODO: return result instead
-            panic!(format!(
-                "Failed to fetch package metadata for {}",
-                package_name
-            ))
+                metadata
+            }
+            _ => {
+                // TODO: retry?
+                // TODO: return result instead
+                panic!(format!(
+                    "Failed to fetch package metadata for {}",
+                    package_name
+                ))
+            }
         }
     }
 }
