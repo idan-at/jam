@@ -1,12 +1,17 @@
-use log::{debug, info};
+use again::RetryPolicy;
+use log::info;
 use reqwest::header;
 use reqwest::Client;
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::time::Duration;
 use urlencoding::encode;
 
 const NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE: &'static str =
     "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*";
+
+const FETCH_METADATA_EXPONENTIAL_BACK_OFF_MILLIS: u64 = 100;
+const FETCH_METADATA_MAX_RETRIES: usize = 3;
 
 #[derive(Debug, Deserialize)]
 pub struct DistMetadata {
@@ -44,11 +49,19 @@ impl Fetcher {
 
         info!("Getting package metadata from {}", url);
 
-        match self
-            .client
-            .get(&url)
-            .header(header::ACCEPT, NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE)
-            .send()
+        let retry_policy = RetryPolicy::exponential(Duration::from_millis(
+            FETCH_METADATA_EXPONENTIAL_BACK_OFF_MILLIS,
+        ))
+        .with_max_retries(FETCH_METADATA_MAX_RETRIES)
+        .with_jitter(true);
+
+        match retry_policy
+            .retry(|| {
+                self.client
+                    .get(&url)
+                    .header(header::ACCEPT, NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE)
+                    .send()
+            })
             .await
         {
             Ok(response) if response.status().is_success() => {
@@ -61,7 +74,6 @@ impl Fetcher {
                 metadata
             }
             _ => {
-                // TODO: retry?
                 // TODO: return result instead
                 panic!(format!(
                     "Failed to fetch package metadata for {}",
