@@ -6,6 +6,7 @@ use jm_test_utils::*;
 async fn fails_on_missing_manifest_file() {
     given_manifest_file_does_not_exist(|path| async move {
         let opts = Opts {
+            registry: String::from("http://some/url"),
             command: Command::Install(Install {}),
         };
 
@@ -23,6 +24,7 @@ async fn fails_on_missing_manifest_file() {
 async fn succeeds_when_manifest_file_is_valid() {
     given_valid_manifest_file(|path| async move {
         let opts = Opts {
+            registry: String::from("http://some/url"),
             command: Command::Install(Install {}),
         };
 

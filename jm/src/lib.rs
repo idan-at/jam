@@ -29,7 +29,7 @@ pub async fn run(cwd: PathBuf, opts: Opts) -> Result<(), String> {
     let manifest_file_path = root_path.join("jm.json");
     let manifest_file_content = read_manifest_file(manifest_file_path)?;
 
-    let config = Config::new(root_path, &manifest_file_content)?;
+    let config = Config::new(root_path, &manifest_file_content, &opts.registry)?;
     debug!("{:?}", config);
 
     match opts.command {

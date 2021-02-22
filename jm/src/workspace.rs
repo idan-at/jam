@@ -133,6 +133,7 @@ mod tests {
     #[test]
     fn fails_on_invalid_package_json() {
         let tmp_dir = create_tmp_dir();
+        let registry = String::from("http://some/url");
 
         let p1_base_path = tmp_dir.path().join("packages").join("p1");
 
@@ -142,6 +143,7 @@ mod tests {
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
             &get_manifest_file_content(vec!["**/*"]),
+            &registry,
         )
         .unwrap();
 
@@ -159,10 +161,12 @@ mod tests {
     #[test]
     fn ignores_invalid_glob_pattern() {
         let tmp_dir = create_tmp_dir();
+        let registry = String::from("http://some/url");
 
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
             &get_manifest_file_content(vec!["?"]),
+            &registry
         )
         .unwrap();
 
@@ -179,6 +183,7 @@ mod tests {
     #[test]
     fn collects_the_matching_manifest_files_parents() {
         let tmp_dir = create_tmp_dir();
+        let registry = String::from("http://some/url");
 
         let p1_base_path = tmp_dir.path().join("packages").join("p1");
         let p2_base_path = tmp_dir.path().join("packages").join("p2");
@@ -199,6 +204,7 @@ mod tests {
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
             &get_manifest_file_content(vec!["**/*"]),
+            &registry
         )
         .unwrap();
 
@@ -234,6 +240,7 @@ mod tests {
     #[test]
     fn takes_all_patterns_into_account() {
         let tmp_dir = create_tmp_dir();
+        let registry = String::from("http://some/url");
 
         let p1_base_path = tmp_dir.path().join("packages").join("p1");
         let p2_base_path = tmp_dir.path().join("packages").join("p2");
@@ -254,6 +261,7 @@ mod tests {
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
             &get_manifest_file_content(vec!["**/*", "!**/p2/**"]),
+            &registry
         )
         .unwrap();
 
@@ -278,6 +286,7 @@ mod tests {
     #[test]
     fn ignores_packages_inside_node_modules() {
         let tmp_dir = create_tmp_dir();
+        let registry = String::from("http://some/url");
 
         let p1_base_path = tmp_dir.path().join("packages").join("p1");
         let p2_base_path = tmp_dir
@@ -302,6 +311,7 @@ mod tests {
         let config = Config::new(
             tmp_dir.path().to_path_buf().clone(),
             &get_manifest_file_content(vec!["**/*"]),
+            &registry
         )
         .unwrap();
 

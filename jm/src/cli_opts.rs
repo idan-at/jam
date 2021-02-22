@@ -4,6 +4,8 @@ use std::fmt::{Display, Error, Formatter};
 #[derive(Clap)]
 #[clap(version = "0.0")]
 pub struct Opts {
+    #[clap(long, default_value = "https://registry.npmjs.org")]
+    pub registry: String,
     #[clap(subcommand)]
     pub command: Command,
 }

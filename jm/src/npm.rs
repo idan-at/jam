@@ -34,18 +34,20 @@ pub struct PackageMetadata {
 }
 
 pub struct Fetcher {
+    registry: String,
     client: Client,
 }
 
 impl Fetcher {
-    pub fn new() -> Fetcher {
+    pub fn new(registry: String) -> Fetcher {
         Fetcher {
+            registry,
             client: Client::new(),
         }
     }
 
-    pub async fn get_package_metadata(&self, package_name: &str) -> PackageMetadata {
-        let url = format!("http://npm.dev.wixpress.com/{}", encode(&package_name));
+    pub async fn get_package_metadata(&self, package_name: &str) -> Result<PackageMetadata, String> {
+        let url = format!("{}/{}", self.registry, encode(&package_name));
 
         info!("Getting package metadata from {}", url);
 
@@ -71,11 +73,10 @@ impl Fetcher {
                 ));
                 metadata.package_name = package_name.to_string();
 
-                metadata
+                Ok(metadata)
             }
             _ => {
-                // TODO: return result instead
-                panic!(format!(
+                Err(format!(
                     "Failed to fetch package metadata for {}",
                     package_name
                 ))
