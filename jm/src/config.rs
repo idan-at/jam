@@ -14,7 +14,11 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(root_path: PathBuf, manifest_file_content: &str, registry: &str) -> Result<Config, String> {
+    pub fn new(
+        root_path: PathBuf,
+        manifest_file_content: &str,
+        registry: &str,
+    ) -> Result<Config, String> {
         match serde_json::from_str::<Manifest>(&manifest_file_content) {
         Ok(manifest) => Ok(Config { root_path, patterns: manifest.workspaces, registry: String::from(registry) }),
         Err(_) => Err(String::from(
@@ -27,7 +31,7 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use jm_test_utils::*;
+    use jm_test_utils::common::with_manifest_file_content;
 
     #[test]
     fn fails_on_invalid_manifest_content() {
@@ -43,7 +47,7 @@ mod tests {
     #[test]
     fn succeeds_on_valid_manifest_file() {
         let root_path = PathBuf::new();
-        let content = get_manifest_file_content(vec!["packages/**", "not-in-packages/foo"]);
+        let content = with_manifest_file_content(vec!["packages/**", "not-in-packages/foo"]);
         let registry = String::from("http://some/url");
 
         let result = Config::new(root_path.clone(), &content, &registry);

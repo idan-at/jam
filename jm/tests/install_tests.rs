@@ -1,6 +1,6 @@
 use jm::cli_opts::{Command, Install, Opts};
 use jm::run;
-use jm_test_utils::*;
+use jm_test_utils::async_helpers::*;
 
 #[tokio::test]
 async fn fails_on_missing_manifest_file() {

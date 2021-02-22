@@ -37,7 +37,7 @@ pub struct WorkspacePackage {
 
 #[derive(Debug, PartialEq)]
 pub struct Workspace {
-    pub workspace_packages: Vec<WorkspacePackage>,
+    workspace_packages: Vec<WorkspacePackage>,
 }
 
 impl Workspace {
@@ -79,6 +79,15 @@ impl Workspace {
         }
     }
 
+    // TODO: test
+    pub fn packages(&self) -> Vec<&Package> {
+        self.workspace_packages
+            .iter()
+            .map(|workspace_package| &workspace_package.package)
+            .collect()
+    }
+
+    // TODO: remove
     pub fn collect_packages_versions(&self) -> HashMap<String, HashSet<String>> {
         self.workspace_packages
             .iter()
@@ -117,220 +126,186 @@ impl Workspace {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use jm_test_utils::*;
-    use std::fs;
-
-    fn metadata_file_content(name: &str, version: &str) -> String {
-        String::from(format!(
-            r#"{{
-            "name": "{}",
-            "version": "{}"
-        }}"#,
-            name, version
-        ))
-    }
+    use jm_test_utils::common::*;
+    use jm_test_utils::sync_helpers::*;
+    use maplit::hashmap;
 
     #[test]
     fn fails_on_invalid_package_json() {
-        let tmp_dir = create_tmp_dir();
-        let registry = String::from("http://some/url");
+        let contents = hashmap! {
+            PathBuf::from("packages/p1") => String::from("{}")
+        };
 
-        let p1_base_path = tmp_dir.path().join("packages").join("p1");
+        given_mono_repo_with(contents, |path| {
+            let registry = String::from("http://some/url");
 
-        fs::create_dir_all(&p1_base_path).unwrap();
-        fs::write(p1_base_path.join("package.json"), "{}").unwrap();
+            let config = Config::new(
+                path.clone(),
+                &with_manifest_file_content(vec!["**/*"]),
+                &registry,
+            )
+            .unwrap();
 
-        let config = Config::new(
-            tmp_dir.path().to_path_buf().clone(),
-            &get_manifest_file_content(vec!["**/*"]),
-            &registry,
-        )
-        .unwrap();
+            let result = Workspace::from_config(&config);
 
-        let result = Workspace::from_config(&config);
-
-        assert_eq!(
-            result,
-            Err(format!(
-                "Fail to parse {:?}",
-                p1_base_path.join("package.json"),
-            ))
-        )
+            assert_eq!(
+                result,
+                Err(format!(
+                    "Fail to parse {:?}",
+                    path.join("packages").join("p1").join("package.json"),
+                ))
+            )
+        });
     }
 
     #[test]
     fn ignores_invalid_glob_pattern() {
-        let tmp_dir = create_tmp_dir();
-        let registry = String::from("http://some/url");
+        let contents = hashmap! {
+            PathBuf::from("packages/p1") => String::from("{}")
+        };
 
-        let config = Config::new(
-            tmp_dir.path().to_path_buf().clone(),
-            &get_manifest_file_content(vec!["?"]),
-            &registry
-        )
-        .unwrap();
+        given_mono_repo_with(contents, |path| {
+            let registry = String::from("http://some/url");
 
-        let result = Workspace::from_config(&config);
+            let config = Config::new(
+                path.clone(),
+                &with_manifest_file_content(vec!["?"]),
+                &registry,
+            )
+            .unwrap();
 
-        assert_eq!(
-            result,
-            Ok(Workspace {
-                workspace_packages: Vec::new()
-            })
-        )
+            let result = Workspace::from_config(&config);
+
+            assert_eq!(
+                result,
+                Ok(Workspace {
+                    workspace_packages: Vec::new()
+                })
+            )
+        });
     }
 
     #[test]
     fn collects_the_matching_manifest_files_parents() {
-        let tmp_dir = create_tmp_dir();
-        let registry = String::from("http://some/url");
+        let contents = hashmap! {
+            PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0"),
+            PathBuf::from("packages/p2") => with_package_json_file_content("p2", "1.1.0")
+        };
 
-        let p1_base_path = tmp_dir.path().join("packages").join("p1");
-        let p2_base_path = tmp_dir.path().join("packages").join("p2");
+        given_mono_repo_with(contents, |path| {
+            let registry = String::from("http://some/url");
 
-        fs::create_dir_all(&p1_base_path).unwrap();
-        fs::create_dir_all(&p2_base_path).unwrap();
-        fs::write(
-            p1_base_path.join("package.json"),
-            metadata_file_content("p1", "1.0.0"),
-        )
-        .unwrap();
-        fs::write(
-            p2_base_path.join("package.json"),
-            metadata_file_content("p2", "1.1.0"),
-        )
-        .unwrap();
+            let config = Config::new(
+                path.clone(),
+                &with_manifest_file_content(vec!["**/*"]),
+                &registry,
+            )
+            .unwrap();
 
-        let config = Config::new(
-            tmp_dir.path().to_path_buf().clone(),
-            &get_manifest_file_content(vec!["**/*"]),
-            &registry
-        )
-        .unwrap();
+            let result = Workspace::from_config(&config);
 
-        let result = Workspace::from_config(&config);
-
-        assert_eq!(
-            result,
-            Ok(Workspace {
-                workspace_packages: vec![
-                    WorkspacePackage {
-                        package: Package {
-                            name: String::from("p2"),
-                            version: String::from("1.1.0"),
-                            dependencies: HashMap::new(),
-                            dev_dependencies: HashMap::new(),
+            assert_eq!(
+                result,
+                Ok(Workspace {
+                    workspace_packages: vec![
+                        WorkspacePackage {
+                            package: Package {
+                                name: String::from("p2"),
+                                version: String::from("1.1.0"),
+                                dependencies: HashMap::new(),
+                                dev_dependencies: HashMap::new(),
+                            },
+                            base_path: path.join("packages").join("p2")
                         },
-                        base_path: p2_base_path
-                    },
-                    WorkspacePackage {
-                        package: Package {
-                            name: String::from("p1"),
-                            version: String::from("1.0.0"),
-                            dependencies: HashMap::new(),
-                            dev_dependencies: HashMap::new(),
-                        },
-                        base_path: p1_base_path
-                    }
-                ]
-            })
-        )
+                        WorkspacePackage {
+                            package: Package {
+                                name: String::from("p1"),
+                                version: String::from("1.0.0"),
+                                dependencies: HashMap::new(),
+                                dev_dependencies: HashMap::new(),
+                            },
+                            base_path: path.join("packages").join("p1")
+                        }
+                    ]
+                })
+            )
+        });
     }
 
     #[test]
     fn takes_all_patterns_into_account() {
-        let tmp_dir = create_tmp_dir();
-        let registry = String::from("http://some/url");
+        let contents = hashmap! {
+            PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0"),
+            PathBuf::from("packages/p2") => with_package_json_file_content("p2", "1.1.0")
+        };
 
-        let p1_base_path = tmp_dir.path().join("packages").join("p1");
-        let p2_base_path = tmp_dir.path().join("packages").join("p2");
+        given_mono_repo_with(contents, |path| {
+            let registry = String::from("http://some/url");
 
-        fs::create_dir_all(&p1_base_path).unwrap();
-        fs::create_dir_all(&p2_base_path).unwrap();
-        fs::write(
-            p1_base_path.join("package.json"),
-            metadata_file_content("p1", "1.0.0"),
-        )
-        .unwrap();
-        fs::write(
-            p2_base_path.join("package.json"),
-            metadata_file_content("p2", "1.1.0"),
-        )
-        .unwrap();
+            let config = Config::new(
+                path.clone(),
+                &with_manifest_file_content(vec!["**/*", "!**/p2/**"]),
+                &registry,
+            )
+            .unwrap();
 
-        let config = Config::new(
-            tmp_dir.path().to_path_buf().clone(),
-            &get_manifest_file_content(vec!["**/*", "!**/p2/**"]),
-            &registry
-        )
-        .unwrap();
+            let result = Workspace::from_config(&config);
 
-        let result = Workspace::from_config(&config);
-
-        assert_eq!(
-            result,
-            Ok(Workspace {
-                workspace_packages: vec![WorkspacePackage {
-                    package: Package {
-                        name: String::from("p1"),
-                        version: String::from("1.0.0"),
-                        dependencies: HashMap::new(),
-                        dev_dependencies: HashMap::new(),
-                    },
-                    base_path: p1_base_path
-                }]
-            })
-        )
+            assert_eq!(
+                result,
+                Ok(Workspace {
+                    workspace_packages: vec![
+                        WorkspacePackage {
+                            package: Package {
+                                name: String::from("p1"),
+                                version: String::from("1.0.0"),
+                                dependencies: HashMap::new(),
+                                dev_dependencies: HashMap::new(),
+                            },
+                            base_path: path.join("packages").join("p1")
+                        }
+                    ]
+                })
+            )
+        });
     }
 
     #[test]
     fn ignores_packages_inside_node_modules() {
-        let tmp_dir = create_tmp_dir();
-        let registry = String::from("http://some/url");
+        let contents = hashmap! {
+            PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0"),
+            PathBuf::from("packages/node_modules/p2") => with_package_json_file_content("p2", "1.1.0")
+        };
 
-        let p1_base_path = tmp_dir.path().join("packages").join("p1");
-        let p2_base_path = tmp_dir
-            .path()
-            .join("packages")
-            .join("node_modules")
-            .join("p2");
+        given_mono_repo_with(contents, |path| {
+            let registry = String::from("http://some/url");
 
-        fs::create_dir_all(&p1_base_path).unwrap();
-        fs::create_dir_all(&p2_base_path).unwrap();
-        fs::write(
-            p1_base_path.join("package.json"),
-            metadata_file_content("p1", "1.0.0"),
-        )
-        .unwrap();
-        fs::write(
-            p2_base_path.join("package.json"),
-            metadata_file_content("p2", "1.1.0"),
-        )
-        .unwrap();
+            let config = Config::new(
+                path.clone(),
+                &with_manifest_file_content(vec!["**/*", "!**/p2/**"]),
+                &registry,
+            )
+            .unwrap();
 
-        let config = Config::new(
-            tmp_dir.path().to_path_buf().clone(),
-            &get_manifest_file_content(vec!["**/*"]),
-            &registry
-        )
-        .unwrap();
+            let result = Workspace::from_config(&config);
 
-        let result = Workspace::from_config(&config);
-
-        assert_eq!(
-            result,
-            Ok(Workspace {
-                workspace_packages: vec![WorkspacePackage {
-                    package: Package {
-                        name: String::from("p1"),
-                        version: String::from("1.0.0"),
-                        dependencies: HashMap::new(),
-                        dev_dependencies: HashMap::new(),
-                    },
-                    base_path: p1_base_path
-                }]
-            })
-        )
+            assert_eq!(
+                result,
+                Ok(Workspace {
+                    workspace_packages: vec![
+                        WorkspacePackage {
+                            package: Package {
+                                name: String::from("p1"),
+                                version: String::from("1.0.0"),
+                                dependencies: HashMap::new(),
+                                dev_dependencies: HashMap::new(),
+                            },
+                            base_path: path.join("packages").join("p1")
+                        }
+                    ]
+                })
+            )
+        });
     }
 
     #[test]

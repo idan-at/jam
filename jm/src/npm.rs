@@ -46,7 +46,10 @@ impl Fetcher {
         }
     }
 
-    pub async fn get_package_metadata(&self, package_name: &str) -> Result<PackageMetadata, String> {
+    pub async fn get_package_metadata(
+        &self,
+        package_name: &str,
+    ) -> Result<PackageMetadata, String> {
         let url = format!("{}/{}", self.registry, encode(&package_name));
 
         info!("Getting package metadata from {}", url);
@@ -75,12 +78,10 @@ impl Fetcher {
 
                 Ok(metadata)
             }
-            _ => {
-                Err(format!(
-                    "Failed to fetch package metadata for {}",
-                    package_name
-                ))
-            }
+            _ => Err(format!(
+                "Failed to fetch package metadata for {}",
+                package_name
+            )),
         }
     }
 }

@@ -21,45 +21,41 @@ pub fn find_root_dir(cwd: PathBuf) -> Result<PathBuf, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use jm_test_utils::*;
+    use jm_test_utils::sync_helpers::*;
     use std::fs;
 
     #[test]
     fn fails_when_manifest_file_does_not_exist() {
-        let tmp_dir = create_tmp_dir();
+        given_manifest_file_does_not_exist(|path| {
+            let result = find_root_dir(path);
 
-        let result = find_root_dir(tmp_dir.path().to_path_buf());
-
-        assert_eq!(
-            result,
-            Err(String::from(
-                "Couldn't find root directory. Make sure jm.json exists"
-            ))
-        );
+            assert_eq!(
+                result,
+                Err(String::from(
+                    "Couldn't find root directory. Make sure jm.json exists"
+                ))
+            );
+        })
     }
 
     #[test]
     fn finds_manifest_file_on_cwd() {
-        let tmp_dir = create_tmp_dir();
+        given_valid_manifest_file(|path| {
+            let result = find_root_dir(path.clone());
 
-        fs::write(tmp_dir.path().join("jm.json"), "{}").unwrap();
-
-        let result = find_root_dir(tmp_dir.path().to_path_buf());
-
-        assert_eq!(result, Ok(tmp_dir.path().to_path_buf()));
+            assert_eq!(result, Ok(path));
+        })
     }
 
     #[test]
     fn finds_manifest_file_on_parent() {
-        let tmp_dir = create_tmp_dir();
+        given_valid_manifest_file(|path| {
+            let sub_path = path.join("sub1").join("sub2").join("sub3");
+            fs::create_dir_all(&sub_path).unwrap();
 
-        let sub_path = tmp_dir.path().join("sub1").join("sub2").join("sub3");
+            let result = find_root_dir(sub_path);
 
-        fs::create_dir_all(&sub_path).unwrap();
-        fs::write(tmp_dir.path().join("jm.json"), "{}").unwrap();
-
-        let result = find_root_dir(sub_path.to_path_buf());
-
-        assert_eq!(result, Ok(tmp_dir.path().to_path_buf()));
+            assert_eq!(result, Ok(path));
+        })
     }
 }

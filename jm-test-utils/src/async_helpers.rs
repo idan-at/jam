@@ -2,7 +2,7 @@ use futures::Future;
 use std::fs;
 use std::path::PathBuf;
 
-use crate::sync_helpers::*;
+use crate::common::*;
 
 async fn with_tmp_dir<F>(func: impl FnOnce(PathBuf) -> F)
 where
@@ -28,7 +28,7 @@ where
     with_tmp_dir(|path| async {
         let file_path = path.clone().join("jm.json");
 
-        fs::write(file_path, get_manifest_file_content(vec!["**/*"])).unwrap();
+        fs::write(file_path, with_manifest_file_content(vec!["**/*"])).unwrap();
 
         func(path).await;
     })
