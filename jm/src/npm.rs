@@ -1,5 +1,6 @@
 use again::RetryPolicy;
-use log::info;
+use chashmap::CHashMap;
+use log::{debug, info};
 use reqwest::header;
 use reqwest::Client;
 use serde::Deserialize;
@@ -13,18 +14,18 @@ const NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE: &'static str =
 const FETCH_METADATA_EXPONENTIAL_BACK_OFF_MILLIS: u64 = 100;
 const FETCH_METADATA_MAX_RETRIES: usize = 3;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct DistMetadata {
     pub shasum: String,
     pub tarball: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct VersionMetadata {
     pub dist: DistMetadata,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct PackageMetadata {
     #[serde(skip_deserializing)]
     pub package_name: String,
@@ -34,6 +35,7 @@ pub struct PackageMetadata {
 }
 
 pub struct Fetcher {
+    cache: CHashMap<String, PackageMetadata>,
     registry: String,
     client: Client,
 }
@@ -41,12 +43,32 @@ pub struct Fetcher {
 impl Fetcher {
     pub fn new(registry: String) -> Fetcher {
         Fetcher {
+            cache: CHashMap::new(),
             registry,
             client: Client::new(),
         }
     }
 
     pub async fn get_package_metadata(
+        &self,
+        package_name: &str,
+    ) -> Result<PackageMetadata, String> {
+        match self.cache.get(package_name) {
+            Some(metadata) => {
+                debug!("Got {} metadata from cache", package_name);
+                Ok(metadata.clone())
+            }
+            None => {
+                let metadata = self.get_package_metadata_from_npm(package_name).await?;
+
+                debug!("Got {} metadata from remote", package_name);
+                self.cache.insert(package_name.to_string(), metadata.clone());
+                Ok(metadata)
+            }
+        }
+    }
+
+    async fn get_package_metadata_from_npm(
         &self,
         package_name: &str,
     ) -> Result<PackageMetadata, String> {
@@ -59,7 +81,6 @@ impl Fetcher {
         ))
         .with_max_retries(FETCH_METADATA_MAX_RETRIES)
         .with_jitter(true);
-
         match retry_policy
             .retry(|| {
                 self.client

@@ -31,11 +31,7 @@ pub fn given_mono_repo_with(contents: HashMap<PathBuf, String>, func: impl FnOnc
             let package_path = path.join(package_relative_path);
 
             fs::create_dir_all(&package_path).unwrap();
-            fs::write(
-                package_path.join("package.json"),
-                package_json_content,
-            )
-            .unwrap();
+            fs::write(package_path.join("package.json"), package_json_content).unwrap();
         }
 
         func(path);

@@ -254,17 +254,15 @@ mod tests {
             assert_eq!(
                 result,
                 Ok(Workspace {
-                    workspace_packages: vec![
-                        WorkspacePackage {
-                            package: Package {
-                                name: String::from("p1"),
-                                version: String::from("1.0.0"),
-                                dependencies: HashMap::new(),
-                                dev_dependencies: HashMap::new(),
-                            },
-                            base_path: path.join("packages").join("p1")
-                        }
-                    ]
+                    workspace_packages: vec![WorkspacePackage {
+                        package: Package {
+                            name: String::from("p1"),
+                            version: String::from("1.0.0"),
+                            dependencies: HashMap::new(),
+                            dev_dependencies: HashMap::new(),
+                        },
+                        base_path: path.join("packages").join("p1")
+                    }]
                 })
             )
         });
@@ -292,17 +290,15 @@ mod tests {
             assert_eq!(
                 result,
                 Ok(Workspace {
-                    workspace_packages: vec![
-                        WorkspacePackage {
-                            package: Package {
-                                name: String::from("p1"),
-                                version: String::from("1.0.0"),
-                                dependencies: HashMap::new(),
-                                dev_dependencies: HashMap::new(),
-                            },
-                            base_path: path.join("packages").join("p1")
-                        }
-                    ]
+                    workspace_packages: vec![WorkspacePackage {
+                        package: Package {
+                            name: String::from("p1"),
+                            version: String::from("1.0.0"),
+                            dependencies: HashMap::new(),
+                            dev_dependencies: HashMap::new(),
+                        },
+                        base_path: path.join("packages").join("p1")
+                    }]
                 })
             )
         });
