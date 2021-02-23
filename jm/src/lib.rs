@@ -30,9 +30,10 @@ pub async fn run(cwd: PathBuf, opts: Opts) -> Result<(), String> {
     let manifest_file_content = read_manifest_file(manifest_file_path)?;
 
     let config = Config::new(root_path, &manifest_file_content, &opts.registry)?;
-    debug!("{:?}", config);
+    debug!("Config {:?}", config);
 
     match opts.command {
         Command::Install(_) | Command::I(_) => install(&config).await,
+        _ => Err(String::from("Not implemented"))
     }
 }

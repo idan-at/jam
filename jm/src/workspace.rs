@@ -1,3 +1,4 @@
+use crate::package::to_dependencies_hash_map;
 use crate::common::read_manifest_file;
 use crate::config::Config;
 use crate::package::Package;
@@ -23,8 +24,8 @@ impl PackageJson {
         Package {
             name: self.name,
             version: self.version,
-            dependencies: self.dependencies.unwrap_or(HashMap::new()),
-            dev_dependencies: self.dev_dependencies.unwrap_or(HashMap::new()),
+            dependencies: to_dependencies_hash_map(self.dependencies),
+            dev_dependencies: to_dependencies_hash_map(self.dev_dependencies),
         }
     }
 }
@@ -169,8 +170,8 @@ mod tests {
                             package: Package {
                                 name: String::from("p2"),
                                 version: String::from("1.1.0"),
-                                dependencies: HashMap::new(),
-                                dev_dependencies: HashMap::new(),
+                                dependencies: to_dependencies_hash_map(Some(HashMap::new())),
+                                dev_dependencies: to_dependencies_hash_map(Some(HashMap::new())),
                             },
                             base_path: path.join("packages").join("p2")
                         },
@@ -178,8 +179,8 @@ mod tests {
                             package: Package {
                                 name: String::from("p1"),
                                 version: String::from("1.0.0"),
-                                dependencies: HashMap::new(),
-                                dev_dependencies: HashMap::new(),
+                                dependencies: to_dependencies_hash_map(Some(HashMap::new())),
+                                dev_dependencies: to_dependencies_hash_map(Some(HashMap::new())),
                             },
                             base_path: path.join("packages").join("p1")
                         }
@@ -215,8 +216,8 @@ mod tests {
                         package: Package {
                             name: String::from("p1"),
                             version: String::from("1.0.0"),
-                            dependencies: HashMap::new(),
-                            dev_dependencies: HashMap::new(),
+                            dependencies: to_dependencies_hash_map(Some(HashMap::new())),
+                            dev_dependencies: to_dependencies_hash_map(Some(HashMap::new())),
                         },
                         base_path: path.join("packages").join("p1")
                     }]
@@ -251,8 +252,8 @@ mod tests {
                         package: Package {
                             name: String::from("p1"),
                             version: String::from("1.0.0"),
-                            dependencies: HashMap::new(),
-                            dev_dependencies: HashMap::new(),
+                            dependencies: to_dependencies_hash_map(Some(HashMap::new())),
+                            dev_dependencies: to_dependencies_hash_map(Some(HashMap::new())),
                         },
                         base_path: path.join("packages").join("p1")
                     }]
