@@ -44,47 +44,28 @@ fn get_best_matching_version(versions: &HashSet<VersionReq>) -> String {
     sorted_versions.last().unwrap().to_string()
 }
 
-pub fn get_minimal_package_versions(
-    packages_requested_versions: HashMap<String, HashSet<String>>,
-    packages_metadata: &Vec<PackageMetadata>,
-) -> HashMap<String, HashSet<String>> {
-    // TODO: create a hashmap<package_name, package_metadata> for better performance
-    let mut results: HashMap<String, HashSet<String>> = HashMap::new();
+pub fn get_package_exact_version(
+    package_name: &str,
+    version_or_dist_tag: &str,
+    package_metadata: &PackageMetadata,
+) -> String {
+    let package_requested_version =
+        match VersionReq::parse_compat(&version_or_dist_tag, Compat::Npm) {
+            Ok(version) => version,
+            Err(_) => translate_dist_tag_to_version(
+                &package_name,
+                &version_or_dist_tag,
+                &package_metadata,
+            ),
+        };
 
-    for (package_name, package_requested_versions) in packages_requested_versions {
-        for version_or_dist_tag in package_requested_versions {
-            let package_metadata = packages_metadata
-                .iter()
-                .find(|package_metadata| package_metadata.package_name == package_name)
-                .unwrap();
+    let compatible_versions =
+        filter_compatible_versions(&package_requested_version, &package_metadata);
 
-            let package_requested_version =
-                match VersionReq::parse_compat(&version_or_dist_tag, Compat::Npm) {
-                    Ok(version) => version,
-                    Err(_) => translate_dist_tag_to_version(
-                        &package_name,
-                        &version_or_dist_tag,
-                        &package_metadata,
-                    ),
-                };
+    let version = get_best_matching_version(&compatible_versions);
+    let without_equal_prefix = &version[1..];
 
-            let compatible_versions =
-                filter_compatible_versions(&package_requested_version, &package_metadata);
-
-            let best_matching_version = get_best_matching_version(&compatible_versions);
-
-            if let Some(versions) = results.get_mut(&package_name) {
-                versions.insert(best_matching_version);
-            } else {
-                let versions_set: HashSet<String> =
-                    vec![best_matching_version].iter().cloned().collect();
-
-                results.insert(package_name.to_string(), versions_set);
-            }
-        }
-    }
-
-    results
+    String::from(without_equal_prefix)
 }
 
 #[cfg(test)]
@@ -108,6 +89,8 @@ mod tests {
                             shasum: "some-shasum".to_string(),
                             tarball: "some-tarball".to_string(),
                         },
+                        dependencies: None,
+                        dev_dependencies: None
                     },
                 ),
                 (
@@ -117,6 +100,8 @@ mod tests {
                             shasum: "some-shasum".to_string(),
                             tarball: "some-tarball".to_string(),
                         },
+                        dependencies: None,
+                        dev_dependencies: None
                     },
                 ),
                 (
@@ -126,6 +111,8 @@ mod tests {
                             shasum: "some-shasum".to_string(),
                             tarball: "some-tarball".to_string(),
                         },
+                        dependencies: None,
+                        dev_dependencies: None
                     },
                 ),
             ]

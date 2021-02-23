@@ -19,6 +19,7 @@ futures = "0.3.12"
 again = "0.1.2"
 petgraph = "0.5.1"
 chashmap = "2.2.2"
+array_tool = "1.0.3"
 
 [dev-dependencies]
 jm-test-utils = { path = "../jm-test-utils" }

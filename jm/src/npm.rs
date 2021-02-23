@@ -23,6 +23,9 @@ pub struct DistMetadata {
 #[derive(Debug, Deserialize, Clone)]
 pub struct VersionMetadata {
     pub dist: DistMetadata,
+    pub dependencies: Option<HashMap<String, String>>,
+    #[serde(alias = "devDependencies")]
+    pub dev_dependencies: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -62,7 +65,8 @@ impl Fetcher {
                 let metadata = self.get_package_metadata_from_npm(package_name).await?;
 
                 debug!("Got {} metadata from remote", package_name);
-                self.cache.insert(package_name.to_string(), metadata.clone());
+                self.cache
+                    .insert(package_name.to_string(), metadata.clone());
                 Ok(metadata)
             }
         }

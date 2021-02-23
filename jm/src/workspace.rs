@@ -80,46 +80,11 @@ impl Workspace {
     }
 
     // TODO: test
-    pub fn packages(&self) -> Vec<&Package> {
+    pub fn packages(&self) -> Vec<Package> {
         self.workspace_packages
             .iter()
-            .map(|workspace_package| &workspace_package.package)
+            .map(|workspace_package| workspace_package.package.clone())
             .collect()
-    }
-
-    // TODO: remove
-    pub fn collect_packages_versions(&self) -> HashMap<String, HashSet<String>> {
-        self.workspace_packages
-            .iter()
-            .fold(HashMap::new(), |mut results, workspace_package| {
-                self.append_packages_versions(
-                    &mut results,
-                    &workspace_package.package.dependencies,
-                );
-                self.append_packages_versions(
-                    &mut results,
-                    &workspace_package.package.dev_dependencies,
-                );
-
-                results
-            })
-    }
-
-    fn append_packages_versions(
-        &self,
-        results: &mut HashMap<String, HashSet<String>>,
-        dependencies: &HashMap<String, String>,
-    ) {
-        for (package_name, package_version) in dependencies {
-            if let Some(versions) = results.get_mut(package_name) {
-                versions.insert(package_version.to_string());
-            } else {
-                let versions_set: HashSet<String> =
-                    vec![package_version.to_string()].iter().cloned().collect();
-
-                results.insert(package_name.to_string(), versions_set);
-            }
-        }
     }
 }
 
@@ -302,69 +267,5 @@ mod tests {
                 })
             )
         });
-    }
-
-    #[test]
-    fn collects_all_dependencies_versions() {
-        let workspace = Workspace {
-            workspace_packages: vec![
-                WorkspacePackage {
-                    package: Package {
-                        name: String::from("p1"),
-                        version: String::from("1.0.0"),
-                        dependencies: vec![
-                            ("dep1".to_string(), "~1.0.0".to_string()),
-                            ("dep2".to_string(), "~1.0.0".to_string()),
-                        ]
-                        .into_iter()
-                        .collect(),
-                        dev_dependencies: vec![("dep3".to_string(), "1.0.0".to_string())]
-                            .into_iter()
-                            .collect(),
-                    },
-                    base_path: PathBuf::from("/p1"),
-                },
-                WorkspacePackage {
-                    package: Package {
-                        name: String::from("p2"),
-                        version: String::from("1.0.0"),
-                        dependencies: vec![
-                            ("dep3".to_string(), "1.0.0".to_string()),
-                            ("dep2".to_string(), "~1.0.0".to_string()),
-                        ]
-                        .into_iter()
-                        .collect(),
-                        dev_dependencies: vec![("dep1".to_string(), "~2.0.0".to_string())]
-                            .into_iter()
-                            .collect(),
-                    },
-                    base_path: PathBuf::from("/p2"),
-                },
-            ],
-        };
-
-        let packages_versions = workspace.collect_packages_versions();
-
-        let expected: HashMap<String, HashSet<String>> = vec![
-            (
-                "dep3".to_string(),
-                vec!["1.0.0".to_string()].iter().cloned().collect(),
-            ),
-            (
-                "dep2".to_string(),
-                vec!["~1.0.0".to_string()].iter().cloned().collect(),
-            ),
-            (
-                "dep1".to_string(),
-                vec!["~1.0.0".to_string(), "~2.0.0".to_string()]
-                    .iter()
-                    .cloned()
-                    .collect(),
-            ),
-        ]
-        .into_iter()
-        .collect();
-
-        assert_eq!(packages_versions, expected);
     }
 }
