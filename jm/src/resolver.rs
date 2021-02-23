@@ -1,6 +1,6 @@
 use crate::npm::PackageMetadata;
 use semver::{Compat, Version, VersionReq};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::str::FromStr;
 
 fn translate_dist_tag_to_version(
@@ -8,13 +8,8 @@ fn translate_dist_tag_to_version(
     requested_dist_tag: &str,
     package_metadata: &PackageMetadata,
 ) -> VersionReq {
-    let default_dist_tags = HashMap::new();
-    let dist_tags = package_metadata
+    let dist_tag = package_metadata
         .dist_tags
-        .as_ref()
-        .unwrap_or(&default_dist_tags);
-
-    let dist_tag = dist_tags
         .keys()
         .find(|dist_tag| **dist_tag == requested_dist_tag.to_string())
         .expect(&format!(
@@ -22,7 +17,7 @@ fn translate_dist_tag_to_version(
             requested_dist_tag, package_name
         ));
 
-    VersionReq::parse(dist_tags.get(dist_tag).unwrap()).unwrap()
+    VersionReq::parse(package_metadata.dist_tags.get(dist_tag).unwrap()).unwrap()
 }
 
 fn filter_compatible_versions(
@@ -61,6 +56,7 @@ pub fn get_package_exact_version(
 
     let compatible_versions =
         filter_compatible_versions(&package_requested_version, &package_metadata);
+    // TODO: handle the case where no compatible_versions were found
 
     let version = get_best_matching_version(&compatible_versions);
     let without_equal_prefix = &version[1..];
@@ -71,53 +67,36 @@ pub fn get_package_exact_version(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::npm::{DistMetadata, PackageMetadata, VersionMetadata};
+    use crate::npm::{PackageMetadata, VersionMetadata};
+    use maplit::hashmap;
+    use std::collections::HashMap;
 
     fn with_package_metadata() -> PackageMetadata {
         PackageMetadata {
             package_name: "some-package".to_string(),
-            dist_tags: Some(
-                vec![("latest".to_string(), "2.0.0".to_string())]
-                    .into_iter()
-                    .collect(),
-            ),
-            versions: vec![
-                (
-                    "1.0.1".to_string(),
-                    VersionMetadata {
-                        dist: DistMetadata {
-                            shasum: "some-shasum".to_string(),
-                            tarball: "some-tarball".to_string(),
-                        },
-                        dependencies: None,
-                        dev_dependencies: None
-                    },
-                ),
-                (
-                    "1.1.0".to_string(),
-                    VersionMetadata {
-                        dist: DistMetadata {
-                            shasum: "some-shasum".to_string(),
-                            tarball: "some-tarball".to_string(),
-                        },
-                        dependencies: None,
-                        dev_dependencies: None
-                    },
-                ),
-                (
-                    "2.0.0".to_string(),
-                    VersionMetadata {
-                        dist: DistMetadata {
-                            shasum: "some-shasum".to_string(),
-                            tarball: "some-tarball".to_string(),
-                        },
-                        dependencies: None,
-                        dev_dependencies: None
-                    },
-                ),
-            ]
-            .into_iter()
-            .collect(),
+            dist_tags: hashmap! {
+                "latest".to_string() => "2.0.0".to_string(),
+            },
+            versions: hashmap! {
+                "1.0.1".to_string() => VersionMetadata {
+                    shasum: "some-shasum".to_string(),
+                    tarball: "some-tarball".to_string(),
+                    dependencies: HashMap::new(),
+                    dev_dependencies: HashMap::new(),
+                },
+                "1.1.0".to_string() => VersionMetadata {
+                    shasum: "some-shasum".to_string(),
+                    tarball: "some-tarball".to_string(),
+                    dependencies: HashMap::new(),
+                    dev_dependencies: HashMap::new(),
+                },
+                "2.0.0".to_string() => VersionMetadata {
+                    shasum: "some-shasum".to_string(),
+                    tarball: "some-tarball".to_string(),
+                    dependencies: HashMap::new(),
+                    dev_dependencies: HashMap::new(),
+                },
+            },
         }
     }
 

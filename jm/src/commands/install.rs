@@ -1,6 +1,6 @@
+use crate::npm::{Fetcher, PackageMetadata};
 use crate::package::{Package, PackageNode};
 use crate::resolver::get_package_exact_version;
-use crate::npm::{Fetcher, PackageMetadata};
 use crate::Config;
 use crate::Workspace;
 use crate::Writer;
@@ -19,7 +19,8 @@ pub async fn install(config: &Config) -> Result<(), String> {
 
     let mut graph: Graph<PackageNode, ()> = Graph::new();
 
-    let mut list = workspace.workspace_packages
+    let mut list = workspace
+        .workspace_packages
         .iter()
         .map(|workspace_package| {
             (
@@ -53,6 +54,7 @@ async fn step(
     package: &Package,
 ) -> Result<Vec<(NodeIndex, Package)>, String> {
     let mut new_nodes = Vec::<(NodeIndex, Package)>::new();
+    // TODO: warning when package has a dependency that is also a dev dependency
     let dependencies: HashMap<String, String> = package
         .dependencies
         .clone()
@@ -69,22 +71,15 @@ async fn step(
 
     for (dependency_name, requested_version) in dependencies {
         let metadata = packages_metadata.get(&dependency_name).unwrap();
-        let version =
-            get_package_exact_version(&dependency_name, &requested_version, &metadata);
+        let version = get_package_exact_version(&dependency_name, &requested_version, &metadata);
 
         let version_metadata = metadata.versions.get(&version).unwrap();
 
         let package = Package {
             name: dependency_name.clone(),
             version: version.clone(),
-            dependencies: version_metadata
-                .dependencies
-                .clone()
-                .unwrap_or(HashMap::new()),
-            dev_dependencies: version_metadata
-                .dev_dependencies
-                .clone()
-                .unwrap_or(HashMap::new()),
+            dependencies: version_metadata.dependencies.clone(),
+            dev_dependencies: version_metadata.dev_dependencies.clone(),
         };
 
         let node = graph.add_node(PackageNode {

@@ -1,3 +1,5 @@
+use serde_json;
+use std::collections::HashMap;
 use tempdir::TempDir;
 
 pub fn create_tmp_dir() -> TempDir {
@@ -14,12 +16,19 @@ pub fn with_manifest_file_content(workspaces: Vec<&str>) -> String {
     format!(r#"{{ "workspaces": [{}] }}"#, workspaces)
 }
 
-pub fn with_package_json_file_content(name: &str, version: &str) -> String {
+pub fn with_package_json_file_content(
+    name: &str,
+    version: &str,
+    dependencies: Option<HashMap<&str, &str>>,
+) -> String {
+    let dependencies = serde_json::to_string_pretty(&dependencies).unwrap();
+
     String::from(format!(
         r#"{{
         "name": "{}",
-        "version": "{}"
+        "version": "{}",
+        "dependencies": {}
     }}"#,
-        name, version
+        name, version, dependencies
     ))
 }

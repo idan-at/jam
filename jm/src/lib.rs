@@ -1,9 +1,9 @@
 pub mod cli_opts;
+pub mod npm;
 
 mod commands;
 mod common;
 mod config;
-mod npm;
 mod package;
 mod resolver;
 mod root_locator;

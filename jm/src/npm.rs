@@ -3,7 +3,7 @@ use chashmap::CHashMap;
 use log::{debug, info};
 use reqwest::header;
 use reqwest::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
 use urlencoding::encode;
@@ -14,26 +14,39 @@ const NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE: &'static str =
 const FETCH_METADATA_EXPONENTIAL_BACK_OFF_MILLIS: u64 = 100;
 const FETCH_METADATA_MAX_RETRIES: usize = 3;
 
-#[derive(Debug, Deserialize, Clone)]
-pub struct DistMetadata {
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct NpmDistMetadata {
     pub shasum: String,
     pub tarball: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
-pub struct VersionMetadata {
-    pub dist: DistMetadata,
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct NpmVersionMetadata {
+    pub dist: NpmDistMetadata,
     pub dependencies: Option<HashMap<String, String>>,
     #[serde(alias = "devDependencies")]
     pub dev_dependencies: Option<HashMap<String, String>>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
-pub struct PackageMetadata {
-    #[serde(skip_deserializing)]
-    pub package_name: String,
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct NpmPackageMetadata {
     #[serde(alias = "dist-tags")]
     pub dist_tags: Option<HashMap<String, String>>,
+    pub versions: HashMap<String, NpmVersionMetadata>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct VersionMetadata {
+    pub shasum: String,
+    pub tarball: String,
+    pub dependencies: HashMap<String, String>,
+    pub dev_dependencies: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PackageMetadata {
+    pub package_name: String,
+    pub dist_tags: HashMap<String, String>,
     pub versions: HashMap<String, VersionMetadata>,
 }
 
@@ -95,17 +108,42 @@ impl Fetcher {
             .await
         {
             Ok(response) if response.status().is_success() => {
-                let mut metadata: PackageMetadata = response.json().await.expect(&format!(
-                    "Unexpected package metadata response for: {}",
+                let npm_metadata: NpmPackageMetadata = response.json().await.expect(&format!(
+                    "{}: Unexpected package metadata response",
                     package_name
                 ));
-                metadata.package_name = package_name.to_string();
+
+                let metadata = PackageMetadata {
+                    package_name: package_name.to_string(),
+                    dist_tags: npm_metadata.dist_tags.unwrap_or(HashMap::new()),
+                    versions: npm_metadata
+                        .versions
+                        .iter()
+                        .map(|(version, npm_version_metadata)| {
+                            (
+                                version.clone(),
+                                VersionMetadata {
+                                    shasum: npm_version_metadata.dist.shasum.clone(),
+                                    tarball: npm_version_metadata.dist.tarball.clone(),
+                                    dependencies: npm_version_metadata
+                                        .dependencies
+                                        .clone()
+                                        .unwrap_or(HashMap::new()),
+                                    dev_dependencies: npm_version_metadata
+                                        .dev_dependencies
+                                        .clone()
+                                        .unwrap_or(HashMap::new()),
+                                },
+                            )
+                        })
+                        .collect(),
+                };
 
                 Ok(metadata)
             }
             _ => Err(format!(
-                "Failed to fetch package metadata for {}",
-                package_name
+                "{}: Failed to fetch package metadata with {} retries",
+                package_name, FETCH_METADATA_MAX_RETRIES
             )),
         }
     }

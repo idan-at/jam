@@ -4,7 +4,7 @@ use crate::package::Package;
 
 use globwalk::GlobWalkerBuilder;
 use serde::Deserialize;
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 const IGNORE_PATTERS: [&str; 1] = ["!**/node_modules/**"];
@@ -145,8 +145,8 @@ mod tests {
     #[test]
     fn collects_the_matching_manifest_files_parents() {
         let contents = hashmap! {
-            PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0"),
-            PathBuf::from("packages/p2") => with_package_json_file_content("p2", "1.1.0")
+            PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0", None),
+            PathBuf::from("packages/p2") => with_package_json_file_content("p2", "1.1.0", None)
         };
 
         given_mono_repo_with(contents, |path| {
@@ -192,8 +192,8 @@ mod tests {
     #[test]
     fn takes_all_patterns_into_account() {
         let contents = hashmap! {
-            PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0"),
-            PathBuf::from("packages/p2") => with_package_json_file_content("p2", "1.1.0")
+            PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0", None),
+            PathBuf::from("packages/p2") => with_package_json_file_content("p2", "1.1.0", None)
         };
 
         given_mono_repo_with(contents, |path| {
@@ -228,8 +228,8 @@ mod tests {
     #[test]
     fn ignores_packages_inside_node_modules() {
         let contents = hashmap! {
-            PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0"),
-            PathBuf::from("packages/node_modules/p2") => with_package_json_file_content("p2", "1.1.0")
+            PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0", None),
+            PathBuf::from("packages/node_modules/p2") => with_package_json_file_content("p2", "1.1.0", None)
         };
 
         given_mono_repo_with(contents, |path| {

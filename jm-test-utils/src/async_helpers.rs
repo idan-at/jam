@@ -1,4 +1,5 @@
 use futures::Future;
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -33,4 +34,23 @@ where
         func(path).await;
     })
     .await;
+}
+
+pub async fn given_mono_repo_with<F>(
+    contents: HashMap<PathBuf, String>,
+    func: impl FnOnce(PathBuf) -> F,
+) where
+    F: Future<Output = ()>,
+{
+    given_valid_manifest_file(|path| async {
+        for (package_relative_path, package_json_content) in contents {
+            let package_path = path.join(package_relative_path);
+
+            fs::create_dir_all(&package_path).unwrap();
+            fs::write(package_path.join("package.json"), package_json_content).unwrap();
+        }
+
+        func(path).await;
+    })
+    .await
 }
