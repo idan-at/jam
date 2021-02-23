@@ -49,6 +49,32 @@ pub async fn install(config: &Config) -> Result<(), String> {
     Ok(())
 }
 
+async fn step2(fetcher: &Fetcher, package_name: &str, dependency: &Dependency) -> Result<(PackageNode, Package), String> {
+    let metadata = get_package_metadata(fetcher, package_name, &dependency.real_name).await?;
+    let version = get_package_exact_version(
+        package_name,
+        &dependency.name,
+        &dependency.version_or_dist_tag,
+        &metadata,
+    );
+
+    let version_metadata = metadata.versions.get(&version).unwrap();
+
+    let package = Package {
+        name: dependency.name.to_string(),
+        version: version.clone(),
+        dependencies: to_dependencies_list(Some(version_metadata.dependencies.clone())),
+        dev_dependencies: to_dependencies_list(Some(
+            version_metadata.dev_dependencies.clone(),
+        )),
+    };
+
+    Ok((PackageNode {
+        name: dependency.name.to_string(),
+        version,
+    }, package))
+}
+
 async fn step(
     graph: &mut Graph<PackageNode, ()>,
     parent: NodeIndex,
@@ -57,64 +83,19 @@ async fn step(
 ) -> Result<Vec<(NodeIndex, Package)>, String> {
     let mut new_nodes = Vec::<(NodeIndex, Package)>::new();
 
-    for dependency in package.dependencies() {
-        let real_name = dependency.real_name;
-        let version_or_dist_tag = dependency.version_or_dist_tag;
+    let collected_packages = futures::stream::iter(package.dependencies().iter().map(|dependency| {
+        step2(fetcher, &package.name, dependency)
+    })).buffer_unordered(CONCURRENCY).collect::<Vec<Result<_,_>>>().await.into_iter()
+        .collect::<Result<Vec<(PackageNode, Package)>, String>>()?;
 
-        // let metadata = packages_metadata.get(&dependency_name).unwrap();
-        let metadata = get_package_metadata(fetcher, &package.name, &real_name).await?;
-        let version = get_package_exact_version(
-            &package.name,
-            &dependency.name,
-            &version_or_dist_tag,
-            &metadata,
-        );
-
-        let version_metadata = metadata.versions.get(&version).unwrap();
-
-        let package = Package {
-            name: dependency.name.to_string(),
-            version: version.clone(),
-            dependencies: to_dependencies_list(Some(version_metadata.dependencies.clone())),
-            dev_dependencies: to_dependencies_list(Some(
-                version_metadata.dev_dependencies.clone(),
-            )),
-        };
-
-        let node = graph.add_node(PackageNode {
-            name: dependency.name.to_string(),
-            version,
-        });
-
+    collected_packages.into_iter().for_each(|(package_node, package)| {
+        let node = graph.add_node(package_node);
         graph.add_edge(parent, node, ());
-
         new_nodes.push((node, package));
-    }
+    });
 
     Ok(new_nodes)
 }
-
-// async fn get_packages_metadata(
-//     fetcher: &Fetcher,
-//     package_name: &str,
-//     dependencies: &HashMap<String, Dependency>,
-// ) -> Result<Vec<PackageMetadata>, String> {
-//     // TODO: use real name for fetching metadata
-//     match futures::stream::iter(
-//         dependencies
-//             .keys()
-//             .map(|package_name| fetcher.get_package_metadata(package_name)),
-//     )
-//     .buffer_unordered(CONCURRENCY)
-//     .collect::<Vec<Result<_, _>>>()
-//     .await
-//     .into_iter()
-//     .collect::<Result<Vec<PackageMetadata>, String>>()
-//     {
-//         Ok(metadata) => Ok(metadata),
-//         Err(err) => Err(format!("{}->{}", package_name, err)),
-//     }
-// }
 
 async fn get_package_metadata(
     fetcher: &Fetcher,
