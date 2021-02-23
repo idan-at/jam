@@ -1,5 +1,5 @@
 use env_logger;
-use log::debug;
+use log::{debug, LevelFilter};
 use std::env::current_dir;
 use std::process;
 
@@ -10,7 +10,9 @@ use jm::run;
 
 #[tokio::main]
 async fn main() {
-    let _ = env_logger::try_init();
+    let _ = env_logger::builder()
+        .filter_level(LevelFilter::Info)
+        .try_init();
     let cwd = current_dir().unwrap();
     let opts: Opts = Opts::parse();
 

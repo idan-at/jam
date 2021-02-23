@@ -1,6 +1,6 @@
-use crate::package::to_dependencies_hash_map;
 use crate::common::read_manifest_file;
 use crate::config::Config;
+use crate::package::to_dependencies_hash_map;
 use crate::package::Package;
 
 use globwalk::GlobWalkerBuilder;

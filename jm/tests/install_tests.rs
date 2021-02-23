@@ -72,7 +72,7 @@ async fn with_mono_repo_without_dependencies() {
 }
 
 #[tokio::test]
-async fn with_mono_repo_with_simple_dependencies() {
+async fn with_mono_repo_with_version_dependencies() {
     let mut npm_mock_server = setup();
     let contents = hashmap! {
         PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0", None),
@@ -81,7 +81,38 @@ async fn with_mono_repo_with_simple_dependencies() {
         })),
     };
 
-    let metadata = with_npm_package_metadata("4.17.21");
+    let metadata = with_npm_package_metadata("4.17.21", None);
+    npm_mock_server.with_metadata("lodash", &metadata);
+
+    given_mono_repo_with(contents, |path| async move {
+        let opts = Opts {
+            registry: String::from(npm_mock_server.url()),
+            command: Command::Install(Install {}),
+        };
+
+        let result = run(path.to_path_buf(), opts).await;
+
+        assert_eq!(result, Ok(()))
+    })
+    .await;
+}
+
+#[tokio::test]
+async fn with_mono_repo_with_dist_tag_dependencies() {
+    let mut npm_mock_server = setup();
+    let contents = hashmap! {
+        PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0", None),
+        PathBuf::from("packages/p2") => with_package_json_file_content("p2", "1.0.0", Some(hashmap! {
+            "lodash" => "latest"
+        })),
+    };
+
+    let metadata = with_npm_package_metadata(
+        "4.17.21",
+        Some(hashmap! {
+            "latest".to_string() => "4.17.21".to_string()
+        }),
+    );
     npm_mock_server.with_metadata("lodash", &metadata);
 
     given_mono_repo_with(contents, |path| async move {
@@ -107,7 +138,7 @@ async fn with_mono_repo_with_alias_dependencies() {
         })),
     };
 
-    let metadata = with_npm_package_metadata("4.17.21");
+    let metadata = with_npm_package_metadata("4.17.21", None);
     npm_mock_server.with_metadata("lodash", &metadata);
 
     given_mono_repo_with(contents, |path| async move {

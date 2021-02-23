@@ -40,6 +40,7 @@ fn get_best_matching_version(versions: &HashSet<VersionReq>) -> String {
 }
 
 pub fn get_package_exact_version(
+    parent: &str,
     package_name: &str,
     version_or_dist_tag: &str,
     package_metadata: &PackageMetadata,
@@ -57,6 +58,13 @@ pub fn get_package_exact_version(
     let compatible_versions =
         filter_compatible_versions(&package_requested_version, &package_metadata);
     // TODO: handle the case where no compatible_versions were found
+
+    if compatible_versions.len() == 0 {
+        panic!(
+            "No matching versions for {}->{} (requested {})",
+            parent, package_name, package_requested_version
+        )
+    }
 
     let version = get_best_matching_version(&compatible_versions);
     let without_equal_prefix = &version[1..];
