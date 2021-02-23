@@ -4,7 +4,7 @@ use crate::package::Package;
 
 use globwalk::GlobWalkerBuilder;
 use serde::Deserialize;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use std::path::PathBuf;
 
 const IGNORE_PATTERS: [&str; 1] = ["!**/node_modules/**"];
@@ -31,13 +31,13 @@ impl PackageJson {
 
 #[derive(Debug, PartialEq)]
 pub struct WorkspacePackage {
-    base_path: PathBuf,
-    package: Package,
+    pub base_path: PathBuf,
+    pub package: Package,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Workspace {
-    workspace_packages: Vec<WorkspacePackage>,
+    pub workspace_packages: Vec<WorkspacePackage>,
 }
 
 impl Workspace {
@@ -77,14 +77,6 @@ impl Workspace {
             }
             Err(err) => Err(String::from(err.to_string())),
         }
-    }
-
-    // TODO: test
-    pub fn packages(&self) -> Vec<Package> {
-        self.workspace_packages
-            .iter()
-            .map(|workspace_package| workspace_package.package.clone())
-            .collect()
     }
 }
 

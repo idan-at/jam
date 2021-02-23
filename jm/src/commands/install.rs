@@ -19,16 +19,15 @@ pub async fn install(config: &Config) -> Result<(), String> {
 
     let mut graph: Graph<PackageNode, ()> = Graph::new();
 
-    let workspace_packages = workspace.packages();
-    let mut list = workspace_packages
+    let mut list = workspace.workspace_packages
         .iter()
-        .map(|package| {
+        .map(|workspace_package| {
             (
                 graph.add_node(PackageNode {
-                    name: package.name.clone(),
-                    version: package.version.clone(),
+                    name: workspace_package.package.name.clone(),
+                    version: workspace_package.package.version.clone(),
                 }),
-                package.clone(),
+                workspace_package.package.clone(),
             )
         })
         .collect::<Vec<_>>();
@@ -41,6 +40,8 @@ pub async fn install(config: &Config) -> Result<(), String> {
     }
 
     debug!("graph {:?}", graph);
+
+    let _writer = Writer::new(&config)?;
 
     Ok(())
 }
