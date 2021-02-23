@@ -15,7 +15,6 @@ pub fn with_npm_package_metadata(
               tarball: String::from("some-tarball"),
             },
             dependencies: None,
-            dev_dependencies: None,
           },
         },
     }

@@ -51,7 +51,6 @@ mod tests {
                   tarball: String::from("some-tarball"),
                 },
                 dependencies: None,
-                dev_dependencies: None,
               },
             },
         };
@@ -82,7 +81,6 @@ mod tests {
                   tarball: String::from("some-tarball"),
                 },
                 dependencies: None,
-                dev_dependencies: None,
               },
             },
         };

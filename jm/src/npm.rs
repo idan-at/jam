@@ -24,8 +24,6 @@ pub struct NpmDistMetadata {
 pub struct NpmVersionMetadata {
     pub dist: NpmDistMetadata,
     pub dependencies: Option<HashMap<String, String>>,
-    #[serde(alias = "devDependencies")]
-    pub dev_dependencies: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -129,10 +127,7 @@ impl Fetcher {
                                         .dependencies
                                         .clone()
                                         .unwrap_or(HashMap::new()),
-                                    dev_dependencies: npm_version_metadata
-                                        .dev_dependencies
-                                        .clone()
-                                        .unwrap_or(HashMap::new()),
+                                    dev_dependencies: HashMap::new()
                                 },
                             )
                         })
