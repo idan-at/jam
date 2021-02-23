@@ -1,5 +1,5 @@
 use crate::npm::{Fetcher, PackageMetadata};
-use crate::package::to_dependencies_hash_map;
+use crate::package::to_dependencies_list;
 use crate::package::Dependency;
 use crate::package::{Package, PackageNode};
 use crate::resolver::get_package_exact_version;
@@ -57,7 +57,7 @@ async fn step(
 ) -> Result<Vec<(NodeIndex, Package)>, String> {
     let mut new_nodes = Vec::<(NodeIndex, Package)>::new();
 
-    for (dependency_name, dependency) in package.dependencies() {
+    for dependency in package.dependencies() {
         let real_name = dependency.real_name;
         let version_or_dist_tag = dependency.version_or_dist_tag;
 
@@ -65,7 +65,7 @@ async fn step(
         let metadata = get_package_metadata(fetcher, &package.name, &real_name).await?;
         let version = get_package_exact_version(
             &package.name,
-            &dependency_name,
+            &dependency.name,
             &version_or_dist_tag,
             &metadata,
         );
@@ -73,16 +73,16 @@ async fn step(
         let version_metadata = metadata.versions.get(&version).unwrap();
 
         let package = Package {
-            name: dependency_name.to_string(),
+            name: dependency.name.to_string(),
             version: version.clone(),
-            dependencies: to_dependencies_hash_map(Some(version_metadata.dependencies.clone())),
-            dev_dependencies: to_dependencies_hash_map(Some(
+            dependencies: to_dependencies_list(Some(version_metadata.dependencies.clone())),
+            dev_dependencies: to_dependencies_list(Some(
                 version_metadata.dev_dependencies.clone(),
             )),
         };
 
         let node = graph.add_node(PackageNode {
-            name: dependency_name.to_string(),
+            name: dependency.name.to_string(),
             version,
         });
 

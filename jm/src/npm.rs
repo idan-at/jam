@@ -127,7 +127,7 @@ impl Fetcher {
                                         .dependencies
                                         .clone()
                                         .unwrap_or(HashMap::new()),
-                                    dev_dependencies: HashMap::new()
+                                    dev_dependencies: HashMap::new(),
                                 },
                             )
                         })
