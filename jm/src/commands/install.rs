@@ -3,6 +3,7 @@ use crate::package::to_dependencies_list;
 use crate::package::Dependency;
 use crate::package::{Package, PackageNode};
 use crate::resolver::get_package_exact_version;
+use crate::workspace::WorkspacePackage;
 use crate::Config;
 use crate::Workspace;
 use crate::Writer;
@@ -11,29 +12,21 @@ use array_tool::vec::*;
 use futures::StreamExt;
 use log::debug;
 use petgraph::graph::{Graph, NodeIndex};
-use std::collections::HashMap;
 
-const CONCURRENCY: usize = 8;
+const CONCURRENCY: usize = 20;
 
-pub async fn install(config: &Config) -> Result<(), String> {
-    let workspace = Workspace::from_config(config)?;
-    let fetcher = Fetcher::new(config.registry.clone());
-
+async fn step3(
+    fetcher: &Fetcher,
+    workspace_package: &WorkspacePackage,
+) -> Result<Graph<PackageNode, ()>, String> {
     let mut graph: Graph<PackageNode, ()> = Graph::new();
 
-    let mut list = workspace
-        .workspace_packages
-        .iter()
-        .map(|workspace_package| {
-            (
-                graph.add_node(PackageNode {
-                    name: workspace_package.package.name.clone(),
-                    version: workspace_package.package.version.clone(),
-                }),
-                workspace_package.package.clone(),
-            )
-        })
-        .collect::<Vec<_>>();
+    let parent = graph.add_node(PackageNode {
+        name: workspace_package.package.name.clone(),
+        version: workspace_package.package.version.clone(),
+    });
+    let package = workspace_package.package.clone();
+    let mut list = vec![(parent, package)];
 
     while !list.is_empty() {
         let (parent, package) = list.shift().unwrap();
@@ -42,15 +35,38 @@ pub async fn install(config: &Config) -> Result<(), String> {
         list.extend(new_nodes);
     }
 
-    debug!("graph {:?}", graph);
+    Ok(graph)
+}
+
+pub async fn install(config: &Config) -> Result<(), String> {
+    let workspace = Workspace::from_config(config)?;
+    let fetcher = Fetcher::new(config.registry.clone());
+
+    let graphs = futures::stream::iter(
+        workspace
+            .workspace_packages
+            .iter()
+            .map(|workspace_package| step3(&fetcher, &workspace_package)),
+    )
+    .buffer_unordered(CONCURRENCY)
+    .collect::<Vec<Result<_, _>>>()
+    .await
+    .into_iter()
+    .collect::<Result<Vec<Graph<PackageNode, ()>>, String>>()?;
+
+    debug!("{:?}", graphs);
 
     let _writer = Writer::new(&config)?;
 
     Ok(())
 }
 
-async fn step2(fetcher: &Fetcher, package_name: &str, dependency: &Dependency) -> Result<(PackageNode, Package), String> {
-    let metadata = get_package_metadata(fetcher, package_name, &dependency.real_name).await?;
+async fn step2(
+    fetcher: &Fetcher,
+    package_name: &str,
+    dependency: &Dependency,
+) -> Result<Package, String> {
+    let metadata = fetcher.get_package_metadata(&dependency.real_name).await?;
     let version = get_package_exact_version(
         package_name,
         &dependency.name,
@@ -60,19 +76,12 @@ async fn step2(fetcher: &Fetcher, package_name: &str, dependency: &Dependency) -
 
     let version_metadata = metadata.versions.get(&version).unwrap();
 
-    let package = Package {
+    Ok(Package {
         name: dependency.name.to_string(),
         version: version.clone(),
         dependencies: to_dependencies_list(Some(version_metadata.dependencies.clone())),
-        dev_dependencies: to_dependencies_list(Some(
-            version_metadata.dev_dependencies.clone(),
-        )),
-    };
-
-    Ok((PackageNode {
-        name: dependency.name.to_string(),
-        version,
-    }, package))
+        dev_dependencies: to_dependencies_list(Some(version_metadata.dev_dependencies.clone())),
+    })
 }
 
 async fn step(
@@ -83,27 +92,26 @@ async fn step(
 ) -> Result<Vec<(NodeIndex, Package)>, String> {
     let mut new_nodes = Vec::<(NodeIndex, Package)>::new();
 
-    let collected_packages = futures::stream::iter(package.dependencies().iter().map(|dependency| {
-        step2(fetcher, &package.name, dependency)
-    })).buffer_unordered(CONCURRENCY).collect::<Vec<Result<_,_>>>().await.into_iter()
-        .collect::<Result<Vec<(PackageNode, Package)>, String>>()?;
+    let collected_packages = futures::stream::iter(
+        package
+            .dependencies()
+            .iter()
+            .map(|dependency| step2(fetcher, &package.name, dependency)),
+    )
+    .buffer_unordered(CONCURRENCY)
+    .collect::<Vec<Result<_, _>>>()
+    .await
+    .into_iter()
+    .collect::<Result<Vec<Package>, String>>()?;
 
-    collected_packages.into_iter().for_each(|(package_node, package)| {
-        let node = graph.add_node(package_node);
+    collected_packages.into_iter().for_each(|package| {
+        let node = graph.add_node(PackageNode {
+            name: package.name.to_string(),
+            version: package.version.to_string(),
+        });
         graph.add_edge(parent, node, ());
         new_nodes.push((node, package));
     });
 
     Ok(new_nodes)
-}
-
-async fn get_package_metadata(
-    fetcher: &Fetcher,
-    parent: &str,
-    package_name: &str,
-) -> Result<PackageMetadata, String> {
-    match fetcher.get_package_metadata(package_name).await {
-        Ok(metadata) => Ok(metadata),
-        Err(err) => Err(format!("{}->{}", parent, err)),
-    }
 }
