@@ -34,6 +34,5 @@ pub async fn run(cwd: PathBuf, opts: Opts) -> Result<(), String> {
 
     match opts.command {
         Command::Install(_) | Command::I(_) => install(&config).await,
-        _ => Err(String::from("Not implemented")),
     }
 }

@@ -1,5 +1,5 @@
 use again::RetryPolicy;
-use chashmap::CHashMap;
+use dashmap::DashMap;
 use log::{debug, info};
 use reqwest::header;
 use reqwest::Client;
@@ -49,7 +49,7 @@ pub struct PackageMetadata {
 }
 
 pub struct Fetcher {
-    cache: CHashMap<String, PackageMetadata>,
+    cache: DashMap<String, PackageMetadata>,
     registry: String,
     client: Client,
 }
@@ -57,7 +57,7 @@ pub struct Fetcher {
 impl Fetcher {
     pub fn new(registry: String) -> Fetcher {
         Fetcher {
-            cache: CHashMap::new(),
+            cache: DashMap::new(),
             registry,
             client: Client::new(),
         }

@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 pub fn with_npm_package_metadata(
     version: &str,
+    dependencies: Option<HashMap<String, String>>,
     dist_tags: Option<HashMap<String, String>>,
 ) -> NpmPackageMetadata {
     NpmPackageMetadata {
@@ -14,7 +15,7 @@ pub fn with_npm_package_metadata(
               shasum: String::from("some-shasum"),
               tarball: String::from("some-tarball"),
             },
-            dependencies: None,
+            dependencies,
           },
         },
     }
