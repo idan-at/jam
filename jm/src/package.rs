@@ -33,6 +33,7 @@ impl Package {
 }
 
 impl Dependency {
+    // TODO: test
     pub fn from_entry(key: String, value: String) -> Dependency {
         match VersionReq::parse_compat(&value, Compat::Npm) {
             Ok(version) => Dependency {

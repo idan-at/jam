@@ -38,7 +38,6 @@ pub struct VersionMetadata {
     pub shasum: String,
     pub tarball: String,
     pub dependencies: HashMap<String, String>,
-    pub dev_dependencies: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -127,7 +126,6 @@ impl Fetcher {
                                         .dependencies
                                         .clone()
                                         .unwrap_or(HashMap::new()),
-                                    dev_dependencies: HashMap::new(),
                                 },
                             )
                         })

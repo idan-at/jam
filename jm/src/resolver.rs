@@ -59,7 +59,7 @@ impl Resolver {
             name: dependency.name.to_string(),
             version: version.clone(),
             dependencies: to_dependencies_list(Some(version_metadata.dependencies.clone())),
-            dev_dependencies: to_dependencies_list(Some(version_metadata.dev_dependencies.clone())),
+            dev_dependencies: vec![],
         })
     }
 }
@@ -151,19 +151,16 @@ mod tests {
                     shasum: "some-shasum".to_string(),
                     tarball: "some-tarball".to_string(),
                     dependencies: HashMap::new(),
-                    dev_dependencies: HashMap::new(),
                 },
                 "1.1.0".to_string() => VersionMetadata {
                     shasum: "some-shasum".to_string(),
                     tarball: "some-tarball".to_string(),
                     dependencies: HashMap::new(),
-                    dev_dependencies: HashMap::new(),
                 },
                 "2.0.0".to_string() => VersionMetadata {
                     shasum: "some-shasum".to_string(),
                     tarball: "some-tarball".to_string(),
                     dependencies: HashMap::new(),
-                    dev_dependencies: HashMap::new(),
                 },
             },
         }
