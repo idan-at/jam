@@ -7,7 +7,7 @@ use dashmap::DashMap;
 use semver::{Compat, Version, VersionReq};
 use std::collections::HashSet;
 use std::str::FromStr;
-use log::debug;
+use log::{debug, info};
 
 pub struct Resolver {
     cache: DashMap<String, Package>,
@@ -43,6 +43,8 @@ impl Resolver {
     }
 
     async fn get_dependency(&self, requester: &str, dependency: &Dependency) -> Result<Package, String> {
+        info!("Fetching dependency {}@{}", dependency.real_name, dependency.version_or_dist_tag);
+
         let metadata = self.fetcher.get_package_metadata(&dependency.real_name).await?;
         let version = get_package_exact_version(
             requester,

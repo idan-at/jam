@@ -89,7 +89,7 @@ impl Fetcher {
     ) -> Result<PackageMetadata, String> {
         let url = format!("{}/{}", self.registry, encode(&package_name));
 
-        info!("Getting package metadata from {}", url);
+        info!("Getting package metadata for {}", url);
 
         let retry_policy = RetryPolicy::exponential(Duration::from_millis(
             FETCH_METADATA_EXPONENTIAL_BACK_OFF_MILLIS,
