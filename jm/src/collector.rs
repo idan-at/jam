@@ -8,11 +8,7 @@ impl Collector {
   }
 
   pub fn collect(&self) -> Vec<Dependency> {
-    self.packages.iter().fold(vec![], |acc, package| {
-      acc.extend(package.dependencies().clone());
-
-      acc
-    }))
+    self.packages.iter().flat_map(|package| package.dependencies().clone() ))
   }
 }
 
