@@ -9,6 +9,7 @@ mod resolver;
 mod root_locator;
 mod workspace;
 mod writer;
+mod dependency;
 
 use crate::cli_opts::Opts;
 use log::debug;

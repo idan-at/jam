@@ -1,12 +1,6 @@
-use semver::{Compat, VersionReq};
+use crate::dependency::Dependency;
 use std::collections::HashMap;
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct Dependency {
-    pub name: String,
-    pub real_name: String,
-    pub version_or_dist_tag: String,
-}
+use log::warn;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Package {
@@ -37,57 +31,19 @@ impl Package {
         }
     }
 
-    // TODO: test
-    // TODO: warning when package has a dependency that is also a dev dependency
     pub fn dependencies(&self) -> Vec<Dependency> {
         let dependencies = self.dependencies.clone();
         let dev_dependencies = self.dev_dependencies.clone();
 
-        dependencies.into_iter().chain(dev_dependencies).collect()
-    }
-}
-
-impl Dependency {
-    // TODO: test
-    pub fn from_entry(key: String, value: String) -> Dependency {
-        match VersionReq::parse_compat(&value, Compat::Npm) {
-            Ok(version) => Dependency {
-                name: key.clone(),
-                real_name: key,
-                version_or_dist_tag: version.to_string(),
-            },
-            Err(_) => {
-                if value.starts_with("npm:") {
-                    let segments: Vec<&str> = value
-                        .split("npm:")
-                        .collect::<Vec<&str>>()
-                        .get(1)
-                        .unwrap()
-                        .split("@")
-                        .collect();
-
-                    if segments.len() == 2 {
-                        Dependency {
-                            name: key,
-                            real_name: segments[0].to_string(),
-                            version_or_dist_tag: segments[1].to_string(),
-                        }
-                    } else {
-                        Dependency {
-                            name: key,
-                            real_name: format!("@{}", segments[1]),
-                            version_or_dist_tag: segments[2].to_string(),
-                        }
-                    }
-                } else {
-                    Dependency {
-                        name: key.clone(),
-                        real_name: key,
-                        version_or_dist_tag: value,
-                    }
-                }
+        dependencies.into_iter().chain(dev_dependencies).fold(vec![], |mut acc, dependency| {
+            if let Some(dependency) = acc.iter().find(|existing| existing.name == dependency.name) {
+                warn!("Duplicate dependency {} in {}", dependency.name, self.name);
+            } else {
+                acc.push(dependency);
             }
-        }
+
+            acc
+        })
     }
 }
 
@@ -96,6 +52,60 @@ fn to_dependencies_list(dependencies: Option<HashMap<String, String>>) -> Vec<De
 
     dependencies
         .iter()
-        .map(|(key, value)| Dependency::from_entry(key.clone(), value.clone()))
+        .map(|(key, value)| Dependency::from_entry(key, value))
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use maplit::hashmap;
+
+    #[test]
+    fn collects_all_packages_dependencies_and_dev_dependencies() {
+        let package = Package::new(
+            String::from("some-package"),
+            String::from("1.0.0"),
+            Some(hashmap! {
+                "lodash".to_string() => "1.0.0".to_string()
+            }),
+            Some(hashmap! {
+                "lol".to_string() => "npm:lodash@~2.0.0".to_string()
+            })
+        );
+
+        let expected = vec![Dependency {
+            name: "lodash".to_string(),
+            real_name: "lodash".to_string(),
+            version_or_dist_tag: "1.0.0".to_string(),
+        }, Dependency {
+            name: "lol".to_string(),
+            real_name: "lodash".to_string(),
+            version_or_dist_tag: "~2.0.0".to_string(),
+        }];
+
+        assert_eq!(package.dependencies(), expected);
+    }
+
+    #[test]
+    fn uses_dependencies_over_dev_dependencies_in_case_of_repetitions() {
+        let package = Package::new(
+            String::from("some-package"),
+            String::from("1.0.0"),
+            Some(hashmap! {
+                "lodash".to_string() => "1.0.0".to_string()
+            }),
+            Some(hashmap! {
+                "lodash".to_string() => "~2.0.0".to_string()
+            })
+        );
+
+        let expected = vec![Dependency {
+            name: "lodash".to_string(),
+            real_name: "lodash".to_string(),
+            version_or_dist_tag: "1.0.0".to_string(),
+        }];
+
+        assert_eq!(package.dependencies(), expected);
+    }
 }
