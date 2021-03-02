@@ -1,13 +1,12 @@
-use crate::package::to_dependencies_list;
 use crate::npm::Fetcher;
 use crate::npm::PackageMetadata;
 use crate::package::Dependency;
 use crate::package::Package;
 use dashmap::DashMap;
+use log::{debug, info};
 use semver::{Compat, Version, VersionReq};
 use std::collections::HashSet;
 use std::str::FromStr;
-use log::{debug, info};
 
 pub struct Resolver {
     cache: DashMap<String, Package>,
@@ -30,22 +29,31 @@ impl Resolver {
                 debug!("Got {} package from cache", package_name);
 
                 Ok(package.clone())
-            },
+            }
             None => {
                 let package = self.get_dependency(requester, dependency).await?;
                 debug!("Got {} package from remote", package_name);
 
-                self.cache
-                    .insert(package_name.to_string(), package.clone());
+                self.cache.insert(package_name.to_string(), package.clone());
                 Ok(package)
             }
         }
     }
 
-    async fn get_dependency(&self, requester: &str, dependency: &Dependency) -> Result<Package, String> {
-        info!("Fetching dependency {}@{}", dependency.real_name, dependency.version_or_dist_tag);
+    async fn get_dependency(
+        &self,
+        requester: &str,
+        dependency: &Dependency,
+    ) -> Result<Package, String> {
+        info!(
+            "Fetching dependency {}@{}",
+            dependency.real_name, dependency.version_or_dist_tag
+        );
 
-        let metadata = self.fetcher.get_package_metadata(&dependency.real_name).await?;
+        let metadata = self
+            .fetcher
+            .get_package_metadata(&dependency.real_name)
+            .await?;
         let version = get_package_exact_version(
             requester,
             &dependency.name,
@@ -55,12 +63,12 @@ impl Resolver {
 
         let version_metadata = metadata.versions.get(&version).unwrap();
 
-        Ok(Package {
-            name: dependency.name.to_string(),
-            version: version.clone(),
-            dependencies: to_dependencies_list(Some(version_metadata.dependencies.clone())),
-            dev_dependencies: vec![],
-        })
+        Ok(Package::new(
+            dependency.name.to_string(),
+            version.clone(),
+            Some(version_metadata.dependencies.clone()),
+            None,
+        ))
     }
 }
 

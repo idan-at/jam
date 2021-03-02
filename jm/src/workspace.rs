@@ -1,6 +1,5 @@
 use crate::common::read_manifest_file;
 use crate::config::Config;
-use crate::package::to_dependencies_list;
 use crate::package::Package;
 
 use globwalk::GlobWalkerBuilder;
@@ -17,17 +16,6 @@ struct PackageJson {
     dependencies: Option<HashMap<String, String>>,
     #[serde(alias = "devDependencies")]
     dev_dependencies: Option<HashMap<String, String>>,
-}
-
-impl PackageJson {
-    pub fn to_package(self) -> Package {
-        Package {
-            name: self.name,
-            version: self.version,
-            dependencies: to_dependencies_list(self.dependencies),
-            dev_dependencies: to_dependencies_list(self.dev_dependencies),
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -68,7 +56,12 @@ impl Workspace {
                     match serde_json::from_str::<PackageJson>(&manifest_file_content) {
                         Ok(package_json) => workspace_packages.push(WorkspacePackage {
                             base_path: entry.path().parent().unwrap().to_path_buf(),
-                            package: package_json.to_package(),
+                            package: Package::new(
+                                package_json.name,
+                                package_json.version,
+                                package_json.dependencies,
+                                package_json.dev_dependencies,
+                            ),
                         }),
                         Err(_) => return Err(format!("Fail to parse {:?}", manifest_file_path,)),
                     }
@@ -170,8 +163,8 @@ mod tests {
                             package: Package {
                                 name: String::from("p2"),
                                 version: String::from("1.1.0"),
-                                dependencies: to_dependencies_list(Some(HashMap::new())),
-                                dev_dependencies: to_dependencies_list(Some(HashMap::new())),
+                                dependencies: vec![],
+                                dev_dependencies: vec![],
                             },
                             base_path: path.join("packages").join("p2")
                         },
@@ -179,8 +172,8 @@ mod tests {
                             package: Package {
                                 name: String::from("p1"),
                                 version: String::from("1.0.0"),
-                                dependencies: to_dependencies_list(Some(HashMap::new())),
-                                dev_dependencies: to_dependencies_list(Some(HashMap::new())),
+                                dependencies: vec![],
+                                dev_dependencies: vec![],
                             },
                             base_path: path.join("packages").join("p1")
                         }
@@ -216,8 +209,8 @@ mod tests {
                         package: Package {
                             name: String::from("p1"),
                             version: String::from("1.0.0"),
-                            dependencies: to_dependencies_list(Some(HashMap::new())),
-                            dev_dependencies: to_dependencies_list(Some(HashMap::new())),
+                            dependencies: vec![],
+                            dev_dependencies: vec![],
                         },
                         base_path: path.join("packages").join("p1")
                     }]
@@ -252,8 +245,8 @@ mod tests {
                         package: Package {
                             name: String::from("p1"),
                             version: String::from("1.0.0"),
-                            dependencies: to_dependencies_list(Some(HashMap::new())),
-                            dev_dependencies: to_dependencies_list(Some(HashMap::new())),
+                            dependencies: vec![],
+                            dev_dependencies: vec![],
                         },
                         base_path: path.join("packages").join("p1")
                     }]

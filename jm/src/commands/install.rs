@@ -1,5 +1,5 @@
 use crate::npm::Fetcher;
-use crate::package::{Package};
+use crate::package::Package;
 use crate::resolver::Resolver;
 use crate::workspace::WorkspacePackage;
 use crate::Config;
@@ -21,17 +21,22 @@ async fn get_workspace_package_tree(
     while !list.is_empty() {
         let package = list.shift().unwrap();
 
-        let dependencies_packages = futures::stream::iter(package
-            .dependencies()
-            .iter()
-            .map(|dependency| resolver.get(&package.name, dependency))
-        ).buffer_unordered(CONCURRENCY)
-            .collect::<Vec<Result<_, _>>>()
-            .await
-            .into_iter()
-            .collect::<Result<Vec<Package>, String>>()?;
+        let dependencies_packages = futures::stream::iter(
+            package
+                .dependencies()
+                .iter()
+                .map(|dependency| resolver.get(&package.name, dependency)),
+        )
+        .buffer_unordered(CONCURRENCY)
+        .collect::<Vec<Result<_, _>>>()
+        .await
+        .into_iter()
+        .collect::<Result<Vec<Package>, String>>()?;
 
-        let new_packages: Vec<Package> = dependencies_packages.into_iter().filter(|package| !seen.contains(package) ).collect();
+        let new_packages: Vec<Package> = dependencies_packages
+            .into_iter()
+            .filter(|package| !seen.contains(package))
+            .collect();
 
         seen.extend(new_packages.clone());
         list.extend(new_packages);
@@ -45,14 +50,16 @@ pub async fn install(config: &Config) -> Result<(), String> {
     let fetcher = Fetcher::new(config.registry.clone());
     let resolver = Resolver::new(fetcher);
 
-    futures::stream::iter(workspace
-        .workspace_packages
-        .iter()
-        .map(|workspace_package| get_workspace_package_tree(&resolver, &workspace_package)))
-        .buffer_unordered(CONCURRENCY)
-        .collect::<Vec<Result<_, _>>>()
-        .await
-        .into_iter()
+    futures::stream::iter(
+        workspace
+            .workspace_packages
+            .iter()
+            .map(|workspace_package| get_workspace_package_tree(&resolver, &workspace_package)),
+    )
+    .buffer_unordered(CONCURRENCY)
+    .collect::<Vec<Result<_, _>>>()
+    .await
+    .into_iter()
     .collect::<Result<Vec<()>, String>>()?;
 
     let _writer = Writer::new(&config)?;

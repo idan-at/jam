@@ -23,6 +23,21 @@ pub struct PackageNode {
 }
 
 impl Package {
+    pub fn new(
+        name: String,
+        version: String,
+        dependencies: Option<HashMap<String, String>>,
+        dev_dependencies: Option<HashMap<String, String>>,
+    ) -> Package {
+        Package {
+            name,
+            version,
+            dependencies: to_dependencies_list(dependencies),
+            dev_dependencies: to_dependencies_list(dev_dependencies),
+        }
+    }
+
+    // TODO: test
     // TODO: warning when package has a dependency that is also a dev dependency
     pub fn dependencies(&self) -> Vec<Dependency> {
         let dependencies = self.dependencies.clone();
@@ -76,7 +91,7 @@ impl Dependency {
     }
 }
 
-pub fn to_dependencies_list(dependencies: Option<HashMap<String, String>>) -> Vec<Dependency> {
+fn to_dependencies_list(dependencies: Option<HashMap<String, String>>) -> Vec<Dependency> {
     let dependencies = dependencies.unwrap_or(HashMap::new());
 
     dependencies
