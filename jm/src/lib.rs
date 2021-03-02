@@ -4,12 +4,12 @@ pub mod npm;
 mod commands;
 mod common;
 mod config;
+mod dependency;
 mod package;
 mod resolver;
 mod root_locator;
 mod workspace;
 mod writer;
-mod dependency;
 
 use crate::cli_opts::Opts;
 use log::debug;

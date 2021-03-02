@@ -1,6 +1,6 @@
+use crate::dependency::Dependency;
 use crate::npm::Fetcher;
 use crate::npm::PackageMetadata;
-use crate::dependency::Dependency;
 use crate::package::Package;
 use dashmap::DashMap;
 use log::{debug, info};

@@ -1,6 +1,6 @@
 use crate::dependency::Dependency;
-use std::collections::HashMap;
 use log::warn;
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Package {
@@ -35,15 +35,20 @@ impl Package {
         let dependencies = self.dependencies.clone();
         let dev_dependencies = self.dev_dependencies.clone();
 
-        dependencies.into_iter().chain(dev_dependencies).fold(vec![], |mut acc, dependency| {
-            if let Some(dependency) = acc.iter().find(|existing| existing.name == dependency.name) {
-                warn!("Duplicate dependency {} in {}", dependency.name, self.name);
-            } else {
-                acc.push(dependency);
-            }
+        dependencies
+            .into_iter()
+            .chain(dev_dependencies)
+            .fold(vec![], |mut acc, dependency| {
+                if let Some(dependency) =
+                    acc.iter().find(|existing| existing.name == dependency.name)
+                {
+                    warn!("Duplicate dependency {} in {}", dependency.name, self.name);
+                } else {
+                    acc.push(dependency);
+                }
 
-            acc
-        })
+                acc
+            })
     }
 }
 
@@ -71,18 +76,21 @@ mod tests {
             }),
             Some(hashmap! {
                 "lol".to_string() => "npm:lodash@~2.0.0".to_string()
-            })
+            }),
         );
 
-        let expected = vec![Dependency {
-            name: "lodash".to_string(),
-            real_name: "lodash".to_string(),
-            version_or_dist_tag: "1.0.0".to_string(),
-        }, Dependency {
-            name: "lol".to_string(),
-            real_name: "lodash".to_string(),
-            version_or_dist_tag: "~2.0.0".to_string(),
-        }];
+        let expected = vec![
+            Dependency {
+                name: "lodash".to_string(),
+                real_name: "lodash".to_string(),
+                version_or_dist_tag: "1.0.0".to_string(),
+            },
+            Dependency {
+                name: "lol".to_string(),
+                real_name: "lodash".to_string(),
+                version_or_dist_tag: "~2.0.0".to_string(),
+            },
+        ];
 
         assert_eq!(package.dependencies(), expected);
     }
@@ -97,7 +105,7 @@ mod tests {
             }),
             Some(hashmap! {
                 "lodash".to_string() => "~2.0.0".to_string()
-            })
+            }),
         );
 
         let expected = vec![Dependency {
