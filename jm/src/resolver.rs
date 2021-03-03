@@ -8,6 +8,7 @@ use log::{debug, info};
 use semver::{Compat, Version, VersionReq};
 use std::collections::HashSet;
 use std::iter::FromIterator;
+use std::ops::Deref;
 use std::str::FromStr;
 
 pub struct Resolver {
@@ -30,7 +31,20 @@ impl Resolver {
             Some(packages_set) => {
                 debug!("Got {} package from cache", package_name);
 
-                Ok(packages_set.iter().last().unwrap().clone())
+                for reference in packages_set.iter() {
+                    let package_ref = reference.deref();
+
+                    if self.version_matches(package_ref, dependency).await? {
+                        return Ok(package_ref.clone());
+                    }
+                }
+
+                let package = self.get_dependency(requester, dependency).await?;
+                debug!("Got {} package from remote", package_name);
+
+                packages_set.insert(package.clone());
+
+                Ok(package)
             }
             None => {
                 let package = self.get_dependency(requester, dependency).await?;
@@ -72,6 +86,34 @@ impl Resolver {
             Some(version_metadata.dependencies.clone()),
             None,
         ))
+    }
+
+    async fn version_matches(
+        &self,
+        package: &Package,
+        dependency: &Dependency,
+    ) -> Result<bool, String> {
+        info!(
+            "Fetching dependency {}@{}",
+            dependency.real_name, dependency.version_or_dist_tag
+        );
+
+        let metadata = self
+            .fetcher
+            .get_package_metadata(&dependency.real_name)
+            .await?;
+
+        let package_requested_version =
+            match VersionReq::parse_compat(&dependency.version_or_dist_tag, Compat::Npm) {
+                Ok(version) => version,
+                Err(_) => translate_dist_tag_to_version(
+                    &package.name,
+                    &dependency.version_or_dist_tag,
+                    &metadata,
+                ),
+            };
+
+        Ok(package_requested_version.matches(&Version::from_str(&package.version).unwrap()))
     }
 }
 
