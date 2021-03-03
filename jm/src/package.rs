@@ -2,7 +2,7 @@ use crate::dependency::Dependency;
 use log::warn;
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct Package {
     pub name: String,
     pub version: String,

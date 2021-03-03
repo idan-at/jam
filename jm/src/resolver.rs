@@ -3,13 +3,15 @@ use crate::npm::Fetcher;
 use crate::npm::PackageMetadata;
 use crate::package::Package;
 use dashmap::DashMap;
+use dashmap::DashSet;
 use log::{debug, info};
 use semver::{Compat, Version, VersionReq};
 use std::collections::HashSet;
+use std::iter::FromIterator;
 use std::str::FromStr;
 
 pub struct Resolver {
-    cache: DashMap<String, Package>,
+    cache: DashMap<String, DashSet<Package>>,
     fetcher: Fetcher,
 }
 
@@ -25,16 +27,17 @@ impl Resolver {
         let package_name = &dependency.real_name;
 
         match self.cache.get(package_name) {
-            Some(package) => {
+            Some(packages_set) => {
                 debug!("Got {} package from cache", package_name);
 
-                Ok(package.clone())
+                Ok(packages_set.iter().last().unwrap().clone())
             }
             None => {
                 let package = self.get_dependency(requester, dependency).await?;
                 debug!("Got {} package from remote", package_name);
 
-                self.cache.insert(package_name.to_string(), package.clone());
+                let set = DashSet::from_iter(vec![package.clone()].into_iter());
+                self.cache.insert(package_name.to_string(), set);
                 Ok(package)
             }
         }
