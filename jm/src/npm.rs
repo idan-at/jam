@@ -1,6 +1,6 @@
 use again::RetryPolicy;
 use dashmap::DashMap;
-use log::{debug, info};
+use log::debug;
 use reqwest::header;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -87,8 +87,6 @@ impl Fetcher {
         package_name: &str,
     ) -> Result<PackageMetadata, String> {
         let url = format!("{}/{}", self.registry, encode(&package_name));
-
-        info!("Getting package metadata for {}", url);
 
         let retry_policy = RetryPolicy::exponential(Duration::from_millis(
             FETCH_METADATA_EXPONENTIAL_BACK_OFF_MILLIS,

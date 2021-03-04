@@ -32,12 +32,11 @@ impl Resolver {
 
         match self.cache.get(package_name) {
             Some(packages_set) => {
-                debug!("Got {} package from cache", package_name);
-
                 for reference in packages_set.iter() {
                     let package_ref = reference.deref();
 
                     if self.version_matches(package_ref, dependency).await? {
+                        debug!("Got {} package from cache", package_name);
                         return Ok(package_ref.clone());
                     }
                 }
@@ -80,7 +79,9 @@ impl Resolver {
             .helper
             .extract_dependency_version_req(dependency, &metadata)?;
 
-        let version = self.helper.resolve_version(requester, &package_requested_version, &metadata)?;
+        let version =
+            self.helper
+                .resolve_version(requester, &package_requested_version, &metadata)?;
 
         let version_metadata = metadata.versions.get(&version.to_string()).unwrap();
 

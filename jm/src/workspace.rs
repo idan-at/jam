@@ -72,6 +72,14 @@ impl Workspace {
             Err(err) => Err(String::from(err.to_string())),
         }
     }
+
+    // TODO: test
+    pub fn packages(&self) -> Vec<Package> {
+        self.workspace_packages
+            .iter()
+            .map(|workspace_package| workspace_package.package.clone())
+            .collect()
+    }
 }
 
 #[cfg(test)]
