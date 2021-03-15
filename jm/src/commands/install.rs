@@ -20,7 +20,8 @@ pub async fn install(config: &Config) -> Result<(), String> {
 
     while !list.is_empty() {
         let dependencies_packages = futures::stream::iter(
-            collector.collect(&list)
+            collector
+                .collect(&list)
                 .iter()
                 .map(|(dependency, packages)| resolver.get(&packages[0].name, dependency)),
         )

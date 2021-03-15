@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use crate::dependency::Dependency;
 use crate::package::Package;
+use std::collections::HashMap;
 
 pub struct Collector {}
 
@@ -10,9 +10,9 @@ impl Collector {
     }
 
     pub fn collect(&self, packages: &Vec<Package>) -> HashMap<Dependency, Vec<Package>> {
-        packages
-            .iter()
-            .fold(HashMap::new(), |mut acc: HashMap<Dependency, Vec<Package>>, package| {
+        packages.iter().fold(
+            HashMap::new(),
+            |mut acc: HashMap<Dependency, Vec<Package>>, package| {
                 for dependency in package.dependencies() {
                     match acc.get_mut(&dependency) {
                         Some(packages) => packages.push(package.clone()),
@@ -23,7 +23,8 @@ impl Collector {
                 }
 
                 acc
-            })
+            },
+        )
     }
 }
 

@@ -45,7 +45,10 @@ async fn with_empty_mono_repo() {
 
         let result = run(path.to_path_buf(), opts).await;
 
-        assert_eq!(result, Err(String::from("No packages were found in workspace")))
+        assert_eq!(
+            result,
+            Err(String::from("No packages were found in workspace"))
+        )
     })
     .await;
 }

@@ -77,7 +77,6 @@ impl Workspace {
         }
     }
 
-    // TODO: test
     pub fn packages(&self) -> Vec<Package> {
         self.workspace_packages
             .iter()
@@ -120,7 +119,6 @@ mod tests {
             )
         });
     }
-
 
     #[test]
     fn fails_when_no_package_matches_given_glob() {
@@ -168,17 +166,15 @@ mod tests {
             assert_eq!(
                 result,
                 Ok(Workspace {
-                    workspace_packages: vec![
-                        WorkspacePackage {
-                            package: Package {
-                                name: String::from("p1"),
-                                version: String::from("1.0.0"),
-                                dependencies: vec![],
-                                dev_dependencies: vec![],
-                            },
-                            base_path: path.join("packages").join("p1")
-                        }
-                    ]
+                    workspace_packages: vec![WorkspacePackage {
+                        package: Package {
+                            name: String::from("p1"),
+                            version: String::from("1.0.0"),
+                            dependencies: vec![],
+                            dev_dependencies: vec![],
+                        },
+                        base_path: path.join("packages").join("p1")
+                    }]
                 })
             )
         });
@@ -301,5 +297,39 @@ mod tests {
                 })
             )
         });
+    }
+
+    #[test]
+    fn test_get_packages() {
+        let p1 = Package {
+            name: String::from("p1"),
+            version: String::from("1.0.0"),
+            dependencies: vec![],
+            dev_dependencies: vec![],
+        };
+
+        let p2 = Package {
+            name: String::from("p2"),
+            version: String::from("2.0.0"),
+            dependencies: vec![],
+            dev_dependencies: vec![],
+        };
+
+        let workspace = Workspace {
+            workspace_packages: vec![
+                WorkspacePackage {
+                    package: p1.clone(),
+                    base_path: PathBuf::new(),
+                },
+                WorkspacePackage {
+                    package: p2.clone(),
+                    base_path: PathBuf::new(),
+                },
+            ],
+        };
+
+        let expected = vec![p1, p2];
+
+        assert_eq!(workspace.packages(), expected);
     }
 }
