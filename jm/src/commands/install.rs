@@ -35,7 +35,7 @@ pub async fn install(config: &Config) -> Result<(), String> {
                 .iter()
                 .map(|(dependency, packages)| resolver.get(&packages[0].name, dependency)),
         )
-        .buffer_unordered(CONCURRENCY * 3)
+        .buffer_unordered(CONCURRENCY)
         .collect::<Vec<Result<_, _>>>()
         .await
         .into_iter()
