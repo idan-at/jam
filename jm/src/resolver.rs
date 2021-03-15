@@ -1,7 +1,6 @@
-use crate::dependency::Dependency;
 use crate::npm::Fetcher;
 use crate::npm::PackageMetadata;
-use crate::package::Package;
+use jm_core::package::Package;
 use dashmap::DashMap;
 use dashmap::DashSet;
 use log::{debug, info};
@@ -9,6 +8,9 @@ use semver::{Compat, Version, VersionReq};
 use std::iter::FromIterator;
 use std::ops::Deref;
 use std::str::FromStr;
+use jm_core::dependency::Dependency;
+use jm_core::resolver::PackageResolver;
+use async_trait::async_trait;
 
 pub struct Resolver {
     cache: DashMap<String, DashSet<Package>>,
@@ -24,43 +26,6 @@ impl Resolver {
             cache: DashMap::new(),
             fetcher,
             helper: ResolverHelper::new(),
-        }
-    }
-
-    pub async fn get<'a>(
-        &self,
-        requester: &str,
-        dependency: &'a Dependency,
-    ) -> Result<(Package, &'a Dependency), String> {
-        let package_name = &dependency.real_name;
-
-        match self.cache.get(package_name) {
-            Some(packages_set) => {
-                for reference in packages_set.iter() {
-                    let package_ref = reference.deref();
-
-                    if self.version_matches(package_ref, dependency).await? {
-                        debug!("Got {} package from cache", package_name);
-                        return Ok((package_ref.clone(), dependency));
-                    }
-                }
-
-                let package = self.get_dependency(requester, dependency).await?;
-                debug!("Got {} package from remote", package_name);
-
-                packages_set.insert(package.clone());
-
-                Ok((package, dependency))
-            }
-            None => {
-                let package = self.get_dependency(requester, dependency).await?;
-                debug!("Got {} package from remote", package_name);
-
-                let set = DashSet::from_iter(vec![package.clone()].into_iter());
-                self.cache.insert(package_name.to_string(), set);
-
-                Ok((package, dependency))
-            }
         }
     }
 
@@ -114,6 +79,46 @@ impl Resolver {
         Ok(self
             .helper
             .version_matches(&package_requested_version, &package.version))
+    }
+}
+
+#[async_trait]
+impl PackageResolver for Resolver {
+    async fn get<'a>(
+        &self,
+        requester: &str,
+        dependency: &'a Dependency,
+    ) -> Result<(Package, &'a Dependency), String> {
+        let package_name = &dependency.real_name;
+
+        match self.cache.get(package_name) {
+            Some(packages_set) => {
+                for reference in packages_set.iter() {
+                    let package_ref = reference.deref();
+
+                    if self.version_matches(package_ref, dependency).await? {
+                        debug!("Got {} package from cache", package_name);
+                        return Ok((package_ref.clone(), dependency));
+                    }
+                }
+
+                let package = self.get_dependency(requester, dependency).await?;
+                debug!("Got {} package from remote", package_name);
+
+                packages_set.insert(package.clone());
+
+                Ok((package, dependency))
+            }
+            None => {
+                let package = self.get_dependency(requester, dependency).await?;
+                debug!("Got {} package from remote", package_name);
+
+                let set = DashSet::from_iter(vec![package.clone()].into_iter());
+                self.cache.insert(package_name.to_string(), set);
+
+                Ok((package, dependency))
+            }
+        }
     }
 }
 

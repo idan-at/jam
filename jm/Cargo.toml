@@ -13,6 +13,7 @@ env_logger = "0.8.3"
 reqwest = { version = "0.11.0", features = ["json"] }
 urlencoding = "1.1.1"
 semver = "0.11.0"
+jm-core = { path = "../jm-core" }
 clap = "3.0.0-beta.2"
 tokio = { version = "1.2", features = ["full"] }
 futures = "0.3.12"
@@ -20,6 +21,7 @@ again = "0.1.2"
 petgraph = "0.5.1"
 array_tool = "1.0.3"
 dashmap = "4.0.2"
+async-trait = "0.1.48"
 
 [dev-dependencies]
 jm-test-utils = { path = "../jm-test-utils" }

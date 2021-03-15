@@ -2,5 +2,6 @@
 
 members = [
   "jm",
+  "jm-core",
   "jm-test-utils"
 ]

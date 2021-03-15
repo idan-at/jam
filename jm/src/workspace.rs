@@ -1,6 +1,6 @@
 use crate::common::read_manifest_file;
 use crate::config::Config;
-use crate::package::Package;
+use jm_core::package::Package;
 
 use globwalk::GlobWalkerBuilder;
 use serde::Deserialize;

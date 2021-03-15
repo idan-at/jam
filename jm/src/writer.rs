@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::package::Package;
+use jm_core::package::Package;
 use petgraph::Graph;
 
 use std::fs;
@@ -22,7 +22,7 @@ impl Writer {
         }
     }
 
-    pub fn write(&self, graph: &Graph<Package, ()>) -> Result<(), String> {
+    pub fn write(&self, _graph: &Graph<Package, ()>) -> Result<(), String> {
         Ok(())
     }
 }

@@ -1,12 +1,9 @@
 pub mod cli_opts;
 pub mod npm;
 
-mod collector;
 mod commands;
 mod common;
 mod config;
-mod dependency;
-mod package;
 mod resolver;
 mod root_locator;
 mod workspace;
