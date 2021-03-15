@@ -1,4 +1,6 @@
 use crate::config::Config;
+use crate::package::Package;
+use petgraph::Graph;
 
 use std::fs;
 use std::path::PathBuf;
@@ -18,5 +20,9 @@ impl Writer {
             Ok(_) => Ok(writer),
             Err(err) => Err(String::from(err.to_string())),
         }
+    }
+
+    pub fn write(&self, graph: &Graph<Package, ()>) -> Result<(), String> {
+        Ok(())
     }
 }

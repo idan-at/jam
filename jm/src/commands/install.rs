@@ -70,7 +70,9 @@ pub async fn install(config: &Config) -> Result<(), String> {
             .collect();
     }
 
-    let _writer = Writer::new(&config)?;
+    let writer = Writer::new(&config)?;
+
+    writer.write(&graph)?;
 
     Ok(())
 }
