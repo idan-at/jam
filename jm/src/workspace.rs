@@ -67,7 +67,11 @@ impl Workspace {
                     }
                 }
 
-                Ok(Workspace { workspace_packages })
+                if workspace_packages.len() == 0 {
+                    Err(format!("No packages were found in workspace"))
+                } else {
+                    Ok(Workspace { workspace_packages })
+                }
             }
             Err(err) => Err(String::from(err.to_string())),
         }
@@ -117,8 +121,9 @@ mod tests {
         });
     }
 
+
     #[test]
-    fn ignores_invalid_glob_pattern() {
+    fn fails_when_no_package_matches_given_glob() {
         let contents = hashmap! {
             PathBuf::from("packages/p1") => String::from("{}")
         };
@@ -128,7 +133,32 @@ mod tests {
 
             let config = Config::new(
                 path.clone(),
-                &with_manifest_file_content(vec!["?"]),
+                &with_manifest_file_content(vec!["packages/p2"]),
+                &registry,
+            )
+            .unwrap();
+
+            let result = Workspace::from_config(&config);
+
+            assert_eq!(
+                result,
+                Err(String::from("No packages were found in workspace"))
+            )
+        });
+    }
+
+    #[test]
+    fn ignores_invalid_glob_pattern() {
+        let contents = hashmap! {
+            PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0", None),
+        };
+
+        given_mono_repo_with(contents, |path| {
+            let registry = String::from("http://some/url");
+
+            let config = Config::new(
+                path.clone(),
+                &with_manifest_file_content(vec!["?", "packages/p1"]),
                 &registry,
             )
             .unwrap();
@@ -138,7 +168,17 @@ mod tests {
             assert_eq!(
                 result,
                 Ok(Workspace {
-                    workspace_packages: Vec::new()
+                    workspace_packages: vec![
+                        WorkspacePackage {
+                            package: Package {
+                                name: String::from("p1"),
+                                version: String::from("1.0.0"),
+                                dependencies: vec![],
+                                dev_dependencies: vec![],
+                            },
+                            base_path: path.join("packages").join("p1")
+                        }
+                    ]
                 })
             )
         });
