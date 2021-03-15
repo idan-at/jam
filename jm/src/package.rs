@@ -10,12 +10,6 @@ pub struct Package {
     pub dev_dependencies: Vec<Dependency>,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct PackageNode {
-    pub name: String,
-    pub version: String,
-}
-
 impl Package {
     pub fn new(
         name: String,

@@ -27,7 +27,11 @@ impl Resolver {
         }
     }
 
-    pub async fn get(&self, requester: &str, dependency: &Dependency) -> Result<Package, String> {
+    pub async fn get<'a>(
+        &self,
+        requester: &str,
+        dependency: &'a Dependency,
+    ) -> Result<(Package, &'a Dependency), String> {
         let package_name = &dependency.real_name;
 
         match self.cache.get(package_name) {
@@ -37,7 +41,7 @@ impl Resolver {
 
                     if self.version_matches(package_ref, dependency).await? {
                         debug!("Got {} package from cache", package_name);
-                        return Ok(package_ref.clone());
+                        return Ok((package_ref.clone(), dependency));
                     }
                 }
 
@@ -46,7 +50,7 @@ impl Resolver {
 
                 packages_set.insert(package.clone());
 
-                Ok(package)
+                Ok((package, dependency))
             }
             None => {
                 let package = self.get_dependency(requester, dependency).await?;
@@ -55,7 +59,7 @@ impl Resolver {
                 let set = DashSet::from_iter(vec![package.clone()].into_iter());
                 self.cache.insert(package_name.to_string(), set);
 
-                Ok(package)
+                Ok((package, dependency))
             }
         }
     }
