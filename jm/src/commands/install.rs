@@ -19,20 +19,18 @@ pub async fn install(config: &Config) -> Result<(), String> {
     let mut seen = list.clone();
 
     while !list.is_empty() {
-        let dependencies = collector.collect(&list);
-
-        list.clear();
-
         let dependencies_packages = futures::stream::iter(
-            dependencies
+            collector.collect(&list)
                 .iter()
-                .map(|dependency| resolver.get(/* &package.name */ "something", dependency)),
+                .map(|(dependency, packages)| resolver.get(&packages[0].name, dependency)),
         )
         .buffer_unordered(CONCURRENCY * 3)
         .collect::<Vec<Result<_, _>>>()
         .await
         .into_iter()
         .collect::<Result<Vec<Package>, String>>()?;
+
+        list.clear();
 
         let new_packages: Vec<Package> = dependencies_packages
             .into_iter()

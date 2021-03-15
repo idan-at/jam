@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 use crate::dependency::Dependency;
 use crate::package::Package;
 
@@ -9,18 +9,28 @@ impl Collector {
         Collector {}
     }
 
-    pub fn collect(&self, packages: &Vec<Package>) -> HashSet<Dependency> {
+    pub fn collect(&self, packages: &Vec<Package>) -> HashMap<Dependency, Vec<Package>> {
         packages
             .iter()
-            .flat_map(|package| package.dependencies().clone())
-            .collect()
+            .fold(HashMap::new(), |mut acc: HashMap<Dependency, Vec<Package>>, package| {
+                for dependency in package.dependencies() {
+                    match acc.get_mut(&dependency) {
+                        Some(packages) => packages.push(package.clone()),
+                        None => {
+                            acc.insert(dependency.clone(), vec![package.clone()]);
+                        }
+                    };
+                }
+
+                acc
+            })
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use maplit::hashset;
+    use maplit::hashmap;
 
     #[test]
     fn collects_all_packages_dependencies() {
@@ -39,7 +49,7 @@ mod tests {
             Package {
                 name: "p1".to_string(),
                 version: "1.0.0".to_string(),
-                dependencies: vec![dep1.clone()],
+                dependencies: vec![dep1.clone(), dep2.clone()],
                 dev_dependencies: vec![],
             },
             Package {
@@ -52,7 +62,10 @@ mod tests {
 
         let collector = Collector::new();
 
-        let expected = hashset![dep1, dep2];
+        let expected = hashmap! {
+            dep1 => vec![packages[0].clone()],
+            dep2 => vec![packages[0].clone(), packages[1].clone()],
+        };
 
         assert_eq!(collector.collect(&packages), expected);
     }
