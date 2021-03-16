@@ -14,7 +14,6 @@ use std::collections::HashMap;
 
 const CONCURRENCY: usize = 50;
 
-// TODO: Add tests
 pub async fn build_graph(
     base: Vec<Package>,
     resolver: &dyn PackageResolver,
