@@ -124,13 +124,16 @@ mod tests {
         let npm_package = Package::Package(NpmPackage::new(
             String::from("some-npm-package"),
             String::from("1.0.0"),
-            None, None,
+            None,
+            None,
         ));
 
         let workspace_package = Package::WorkspacePackage(WorkspacePackage::new(
             String::from("some-workspace-package"),
             String::from("2.0.0"),
-            None, None, PathBuf::new()
+            None,
+            None,
+            PathBuf::new(),
         ));
 
         assert_eq!(npm_package.name(), "some-npm-package");
@@ -179,7 +182,7 @@ mod tests {
             Some(hashmap! {
                 "lol".to_string() => "npm:lodash@~2.0.0".to_string()
             }),
-            PathBuf::new()
+            PathBuf::new(),
         ));
 
         let expected = vec![
@@ -197,7 +200,6 @@ mod tests {
 
         assert_eq!(package.dependencies(), expected);
     }
-
 
     #[test]
     fn npm_package_uses_dependencies_over_dev_dependencies_in_case_of_repetitions() {
@@ -232,7 +234,7 @@ mod tests {
             Some(hashmap! {
                 "lodash".to_string() => "~2.0.0".to_string()
             }),
-            PathBuf::new()
+            PathBuf::new(),
         ));
 
         let expected = vec![Dependency {
