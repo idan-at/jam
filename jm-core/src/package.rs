@@ -120,8 +120,28 @@ mod tests {
     use maplit::hashmap;
 
     #[test]
-    fn collects_all_packages_dependencies_and_dev_dependencies() {
-        let package = NpmPackage::new(
+    fn exposes_name_and_version_getters() {
+        let npm_package = Package::Package(NpmPackage::new(
+            String::from("some-npm-package"),
+            String::from("1.0.0"),
+            None, None,
+        ));
+
+        let workspace_package = Package::WorkspacePackage(WorkspacePackage::new(
+            String::from("some-workspace-package"),
+            String::from("2.0.0"),
+            None, None, PathBuf::new()
+        ));
+
+        assert_eq!(npm_package.name(), "some-npm-package");
+        assert_eq!(npm_package.version(), "1.0.0");
+        assert_eq!(workspace_package.name(), "some-workspace-package");
+        assert_eq!(workspace_package.version(), "2.0.0");
+    }
+
+    #[test]
+    fn npm_package_collects_all_packages_dependencies_and_dev_dependencies() {
+        let package = Package::Package(NpmPackage::new(
             String::from("some-package"),
             String::from("1.0.0"),
             Some(hashmap! {
@@ -130,7 +150,7 @@ mod tests {
             Some(hashmap! {
                 "lol".to_string() => "npm:lodash@~2.0.0".to_string()
             }),
-        );
+        ));
 
         let expected = vec![
             Dependency {
@@ -149,8 +169,39 @@ mod tests {
     }
 
     #[test]
-    fn uses_dependencies_over_dev_dependencies_in_case_of_repetitions() {
-        let package = NpmPackage::new(
+    fn workspace_package_collects_all_packages_dependencies_and_dev_dependencies() {
+        let package = Package::WorkspacePackage(WorkspacePackage::new(
+            String::from("some-package"),
+            String::from("1.0.0"),
+            Some(hashmap! {
+                "lodash".to_string() => "1.0.0".to_string()
+            }),
+            Some(hashmap! {
+                "lol".to_string() => "npm:lodash@~2.0.0".to_string()
+            }),
+            PathBuf::new()
+        ));
+
+        let expected = vec![
+            Dependency {
+                name: "lodash".to_string(),
+                real_name: "lodash".to_string(),
+                version_or_dist_tag: "1.0.0".to_string(),
+            },
+            Dependency {
+                name: "lol".to_string(),
+                real_name: "lodash".to_string(),
+                version_or_dist_tag: "~2.0.0".to_string(),
+            },
+        ];
+
+        assert_eq!(package.dependencies(), expected);
+    }
+
+
+    #[test]
+    fn npm_package_uses_dependencies_over_dev_dependencies_in_case_of_repetitions() {
+        let package = Package::Package(NpmPackage::new(
             String::from("some-package"),
             String::from("1.0.0"),
             Some(hashmap! {
@@ -159,7 +210,30 @@ mod tests {
             Some(hashmap! {
                 "lodash".to_string() => "~2.0.0".to_string()
             }),
-        );
+        ));
+
+        let expected = vec![Dependency {
+            name: "lodash".to_string(),
+            real_name: "lodash".to_string(),
+            version_or_dist_tag: "1.0.0".to_string(),
+        }];
+
+        assert_eq!(package.dependencies(), expected);
+    }
+
+    #[test]
+    fn workspace_package_uses_dependencies_over_dev_dependencies_in_case_of_repetitions() {
+        let package = Package::WorkspacePackage(WorkspacePackage::new(
+            String::from("some-package"),
+            String::from("1.0.0"),
+            Some(hashmap! {
+                "lodash".to_string() => "1.0.0".to_string()
+            }),
+            Some(hashmap! {
+                "lodash".to_string() => "~2.0.0".to_string()
+            }),
+            PathBuf::new()
+        ));
 
         let expected = vec![Dependency {
             name: "lodash".to_string(),
