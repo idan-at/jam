@@ -36,7 +36,7 @@ pub async fn build_graph(
         let dependencies_packages = futures::stream::iter(
             dependencies_map
                 .iter()
-                .map(|(dependency, packages)| resolver.get(&packages[0].name, dependency)),
+                .map(|(dependency, packages)| resolver.get(packages[0].name(), dependency)),
         )
         .buffer_unordered(CONCURRENCY)
         .collect::<Vec<Result<_, _>>>()

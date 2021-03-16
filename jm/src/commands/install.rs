@@ -1,9 +1,9 @@
-use jm_core::build_graph;
 use crate::npm::Fetcher;
 use crate::resolver::Resolver;
 use crate::Config;
 use crate::Workspace;
 use crate::Writer;
+use jm_core::build_graph;
 
 pub async fn install(config: &Config) -> Result<(), String> {
     let workspace = Workspace::from_config(config)?;

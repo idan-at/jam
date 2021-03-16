@@ -1,16 +1,17 @@
 use crate::npm::Fetcher;
 use crate::npm::PackageMetadata;
-use jm_core::package::Package;
+use async_trait::async_trait;
 use dashmap::DashMap;
 use dashmap::DashSet;
+use jm_core::dependency::Dependency;
+use jm_core::package::NpmPackage;
+use jm_core::package::Package;
+use jm_core::resolver::PackageResolver;
 use log::{debug, info};
 use semver::{Compat, Version, VersionReq};
 use std::iter::FromIterator;
 use std::ops::Deref;
 use std::str::FromStr;
-use jm_core::dependency::Dependency;
-use jm_core::resolver::PackageResolver;
-use async_trait::async_trait;
 
 pub struct Resolver {
     cache: DashMap<String, DashSet<Package>>,
@@ -54,12 +55,12 @@ impl Resolver {
 
         let version_metadata = metadata.versions.get(&version.to_string()).unwrap();
 
-        Ok(Package::new(
+        Ok(Package::Package(NpmPackage::new(
             dependency.name.to_string(),
             version.to_string(),
             Some(version_metadata.dependencies.clone()),
             None,
-        ))
+        )))
     }
 
     async fn version_matches(
@@ -78,7 +79,7 @@ impl Resolver {
 
         Ok(self
             .helper
-            .version_matches(&package_requested_version, &package.version))
+            .version_matches(&package_requested_version, &package.version()))
     }
 }
 

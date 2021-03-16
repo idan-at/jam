@@ -30,6 +30,10 @@ impl Collector {
 
 #[cfg(test)]
 mod tests {
+    use crate::package::NpmPackage;
+    use crate::package::WorkspacePackage;
+    use std::path::PathBuf;
+
     use super::*;
     use maplit::hashmap;
 
@@ -47,18 +51,21 @@ mod tests {
         };
 
         let packages = vec![
-            Package {
+            Package::Package(NpmPackage {
                 name: "p1".to_string(),
                 version: "1.0.0".to_string(),
                 dependencies: vec![dep1.clone(), dep2.clone()],
                 dev_dependencies: vec![],
-            },
-            Package {
-                name: "p2".to_string(),
-                version: "1.0.0".to_string(),
-                dependencies: vec![dep2.clone()],
-                dev_dependencies: vec![],
-            },
+            }),
+            Package::WorkspacePackage(WorkspacePackage {
+                package: NpmPackage {
+                    name: "p2".to_string(),
+                    version: "1.0.0".to_string(),
+                    dependencies: vec![dep2.clone()],
+                    dev_dependencies: vec![],
+                },
+                base_path: PathBuf::new(),
+            }),
         ];
 
         let collector = Collector::new();

@@ -1,11 +1,10 @@
 use crate::common::read_manifest_file;
 use crate::config::Config;
-use jm_core::package::Package;
+use jm_core::package::{Package, WorkspacePackage};
 
 use globwalk::GlobWalkerBuilder;
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::path::PathBuf;
 
 const IGNORE_PATTERS: [&str; 1] = ["!**/node_modules/**"];
 
@@ -16,12 +15,6 @@ struct PackageJson {
     dependencies: Option<HashMap<String, String>>,
     #[serde(alias = "devDependencies")]
     dev_dependencies: Option<HashMap<String, String>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct WorkspacePackage {
-    pub base_path: PathBuf,
-    pub package: Package,
 }
 
 #[derive(Debug, PartialEq)]
@@ -54,15 +47,13 @@ impl Workspace {
                     let manifest_file_path = entry.path().to_path_buf();
                     let manifest_file_content = read_manifest_file(manifest_file_path.clone())?;
                     match serde_json::from_str::<PackageJson>(&manifest_file_content) {
-                        Ok(package_json) => workspace_packages.push(WorkspacePackage {
-                            base_path: entry.path().parent().unwrap().to_path_buf(),
-                            package: Package::new(
-                                package_json.name,
-                                package_json.version,
-                                package_json.dependencies,
-                                package_json.dev_dependencies,
-                            ),
-                        }),
+                        Ok(package_json) => workspace_packages.push(WorkspacePackage::new(
+                            package_json.name,
+                            package_json.version,
+                            package_json.dependencies,
+                            package_json.dev_dependencies,
+                            entry.path().parent().unwrap().to_path_buf(),
+                        )),
                         Err(_) => return Err(format!("Fail to parse {:?}", manifest_file_path,)),
                     }
                 }
@@ -80,7 +71,7 @@ impl Workspace {
     pub fn packages(&self) -> Vec<Package> {
         self.workspace_packages
             .iter()
-            .map(|workspace_package| workspace_package.package.clone())
+            .map(|workspace_package| Package::WorkspacePackage(workspace_package.clone()))
             .collect()
     }
 }
@@ -88,9 +79,11 @@ impl Workspace {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use jm_core::package::NpmPackage;
     use jm_test_utils::common::*;
     use jm_test_utils::sync_helpers::*;
     use maplit::hashmap;
+    use std::path::PathBuf;
 
     #[test]
     fn fails_on_invalid_package_json() {
@@ -167,7 +160,7 @@ mod tests {
                 result,
                 Ok(Workspace {
                     workspace_packages: vec![WorkspacePackage {
-                        package: Package {
+                        package: NpmPackage {
                             name: String::from("p1"),
                             version: String::from("1.0.0"),
                             dependencies: vec![],
@@ -204,7 +197,7 @@ mod tests {
                 Ok(Workspace {
                     workspace_packages: vec![
                         WorkspacePackage {
-                            package: Package {
+                            package: NpmPackage {
                                 name: String::from("p2"),
                                 version: String::from("1.1.0"),
                                 dependencies: vec![],
@@ -213,7 +206,7 @@ mod tests {
                             base_path: path.join("packages").join("p2")
                         },
                         WorkspacePackage {
-                            package: Package {
+                            package: NpmPackage {
                                 name: String::from("p1"),
                                 version: String::from("1.0.0"),
                                 dependencies: vec![],
@@ -250,7 +243,7 @@ mod tests {
                 result,
                 Ok(Workspace {
                     workspace_packages: vec![WorkspacePackage {
-                        package: Package {
+                        package: NpmPackage {
                             name: String::from("p1"),
                             version: String::from("1.0.0"),
                             dependencies: vec![],
@@ -286,7 +279,7 @@ mod tests {
                 result,
                 Ok(Workspace {
                     workspace_packages: vec![WorkspacePackage {
-                        package: Package {
+                        package: NpmPackage {
                             name: String::from("p1"),
                             version: String::from("1.0.0"),
                             dependencies: vec![],
@@ -301,14 +294,14 @@ mod tests {
 
     #[test]
     fn test_get_packages() {
-        let p1 = Package {
+        let p1 = NpmPackage {
             name: String::from("p1"),
             version: String::from("1.0.0"),
             dependencies: vec![],
             dev_dependencies: vec![],
         };
 
-        let p2 = Package {
+        let p2 = NpmPackage {
             name: String::from("p2"),
             version: String::from("2.0.0"),
             dependencies: vec![],
@@ -328,7 +321,10 @@ mod tests {
             ],
         };
 
-        let expected = vec![p1, p2];
+        let expected = vec![
+            Package::WorkspacePackage(workspace.workspace_packages[0].clone()),
+            Package::WorkspacePackage(workspace.workspace_packages[1].clone()),
+        ];
 
         assert_eq!(workspace.packages(), expected);
     }
