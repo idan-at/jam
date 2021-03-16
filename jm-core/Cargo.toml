@@ -13,3 +13,4 @@ async-trait = "0.1.48"
 
 [dev-dependencies]
 maplit = "1.0.2"
+tokio = { version = "1.2", features = ["full"] }

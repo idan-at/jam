@@ -1062,6 +1062,7 @@ dependencies = [
  "maplit",
  "petgraph",
  "semver",
+ "tokio",
 ]
 
 [[package]]
