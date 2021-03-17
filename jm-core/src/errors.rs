@@ -1,6 +1,7 @@
 use globwalk::GlobError;
 use std::io;
 use std::fmt::{Display, Formatter, Error};
+use reqwest;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct JmError {
@@ -23,6 +24,14 @@ impl Display for JmError {
 
 impl From<io::Error> for JmError {
     fn from(error: io::Error) -> Self {
+        JmError {
+            message: error.to_string(),
+        }
+    }
+}
+
+impl From<reqwest::Error> for JmError {
+    fn from(error: reqwest::Error) -> Self {
         JmError {
             message: error.to_string(),
         }

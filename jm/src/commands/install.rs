@@ -17,7 +17,7 @@ pub async fn install(config: &Config) -> Result<(), JmError> {
     let downloader = Downloader::new();
     let writer = Writer::new(&config, downloader)?;
 
-    writer.write(starting_nodes, &graph)?;
+    writer.write(starting_nodes, &graph).await?;
 
     Ok(())
 }

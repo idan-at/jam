@@ -27,7 +27,7 @@ impl Writer {
         })
     }
 
-    pub fn write(
+    pub async fn write(
         &self,
         starting_nodes: Vec<NodeIndex>,
         graph: &Graph<Package, ()>,
@@ -37,14 +37,14 @@ impl Writer {
             while let Some(nx) = dfs.next(graph) {
                 let package = &graph[nx];
 
-                self.write_package(package)?;
+                self.write_package(package).await?;
             }
         }
 
         Ok(())
     }
 
-    fn write_package(&self, package: &Package) -> Result<(), JmError> {
+    async fn write_package(&self, package: &Package) -> Result<(), JmError> {
         match package {
             Package::Package(npm_package) => {
                 let path = self.package_path(npm_package);
@@ -52,7 +52,7 @@ impl Writer {
 
                 // TODO: test both scoped and non scoped packages
                 fs::create_dir_all(&path)?;
-                self.downloader.download_to(&npm_package.tarball_url, &path)?;
+                self.downloader.download_to(&npm_package, &path).await?;
             }
             Package::WorkspacePackage(workspace_package) => {
                 println!("Ignoring workspace package {:?}", workspace_package)
