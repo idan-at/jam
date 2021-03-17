@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use dashmap::DashMap;
 use dashmap::DashSet;
 use jm_core::dependency::Dependency;
+use jm_core::errors::JmError;
 use jm_core::package::NpmPackage;
 use jm_core::package::Package;
 use jm_core::resolver::PackageResolver;
@@ -34,7 +35,7 @@ impl Resolver {
         &self,
         requester: &str,
         dependency: &Dependency,
-    ) -> Result<Package, String> {
+    ) -> Result<Package, JmError> {
         info!(
             "Fetching dependency {}@{}",
             dependency.real_name, dependency.version_or_dist_tag
@@ -68,7 +69,7 @@ impl Resolver {
         &self,
         package: &Package,
         dependency: &Dependency,
-    ) -> Result<bool, String> {
+    ) -> Result<bool, JmError> {
         let metadata = self
             .fetcher
             .get_package_metadata(&dependency.real_name)
@@ -90,7 +91,7 @@ impl PackageResolver for Resolver {
         &self,
         requester: &str,
         dependency: &'a Dependency,
-    ) -> Result<(Package, &'a Dependency), String> {
+    ) -> Result<(Package, &'a Dependency), JmError> {
         let package_name = &dependency.real_name;
 
         match self.cache.get(package_name) {
@@ -133,25 +134,25 @@ impl ResolverHelper {
         &self,
         dependency: &Dependency,
         package_metadata: &PackageMetadata,
-    ) -> Result<VersionReq, String> {
+    ) -> Result<VersionReq, JmError> {
         match VersionReq::parse_compat(&dependency.version_or_dist_tag, Compat::Npm) {
             Ok(version) => Ok(version),
             Err(_) => {
                 let version = package_metadata
                     .dist_tags
                     .get(&dependency.version_or_dist_tag)
-                    .ok_or(format!(
+                    .ok_or(JmError::new(format!(
                         "Failed to resolve dist tag {} of package {}",
                         &dependency.version_or_dist_tag, &dependency.real_name
-                    ))?;
+                    )))?;
 
                 if package_metadata.versions.contains_key(version) {
                     Ok(VersionReq::parse(version).unwrap())
                 } else {
-                    Err(format!(
+                    Err(JmError::new(format!(
                         "{}@{} points to version {}, which does not exist",
                         &dependency.real_name, &dependency.version_or_dist_tag, &version
-                    ))
+                    )))
                 }
             }
         }
@@ -166,7 +167,7 @@ impl ResolverHelper {
         parent: &str,
         requested_version: &VersionReq,
         package_metadata: &PackageMetadata,
-    ) -> Result<Version, String> {
+    ) -> Result<Version, JmError> {
         let mut matching_versions: Vec<Version> = package_metadata
             .versions
             .keys()
@@ -175,10 +176,10 @@ impl ResolverHelper {
             .collect();
 
         if matching_versions.is_empty() {
-            return Err(format!(
+            return Err(JmError::new(format!(
                 "No matching versions for {}->{} (requested {})",
                 parent, package_metadata.package_name, requested_version
-            ));
+            )));
         }
 
         matching_versions.sort();
@@ -257,10 +258,10 @@ mod tests {
 
         assert_eq!(
             result,
-            Err(format!(
+            Err(JmError::new(format!(
                 "Failed to resolve dist tag {} of package {}",
                 dist_tag, package_name
-            ))
+            )))
         );
     }
 
@@ -295,10 +296,10 @@ mod tests {
 
         assert_eq!(
             result,
-            Err(format!(
+            Err(JmError::new(format!(
                 "{}@{} points to version 1.0.0, which does not exist",
                 package_name, dist_tag
-            ))
+            )))
         );
     }
 
@@ -364,10 +365,10 @@ mod tests {
 
         assert_eq!(
             result,
-            Err(format!(
+            Err(JmError::new(format!(
                 "No matching versions for {}->{} (requested {})",
                 parent, package_name, version_req
-            ))
+            )))
         );
     }
 }

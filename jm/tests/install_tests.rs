@@ -1,6 +1,7 @@
 mod common;
 mod npm_mock_server;
 
+use jm_core::errors::JmError;
 use common::*;
 use jm::cli_opts::{Command, Install, Opts};
 use jm::run;
@@ -26,9 +27,9 @@ async fn fails_on_missing_manifest_file() {
         };
 
         let result = run(path.to_path_buf(), opts).await;
-        let expected = Err(String::from(
+        let expected = Err(JmError::new(String::from(
             "Couldn't find root directory. Make sure jm.json exists",
-        ));
+        )));
 
         assert_eq!(result, expected);
     })
@@ -47,7 +48,7 @@ async fn with_empty_mono_repo() {
 
         assert_eq!(
             result,
-            Err(String::from("No packages were found in workspace"))
+            Err(JmError::new(String::from("No packages were found in workspace")))
         )
     })
     .await;

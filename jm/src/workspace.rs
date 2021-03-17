@@ -1,5 +1,6 @@
 use crate::common::read_manifest_file;
 use crate::config::Config;
+use jm_core::errors::JmError;
 use jm_core::package::{Package, WorkspacePackage};
 
 use globwalk::GlobWalkerBuilder;
@@ -23,7 +24,7 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    pub fn from_config(config: &Config) -> Result<Workspace, String> {
+    pub fn from_config(config: &Config) -> Result<Workspace, JmError> {
         let mut workspace_packages: Vec<WorkspacePackage> = Vec::new();
 
         let mut paths: Vec<String> = config
@@ -39,32 +40,32 @@ impl Workspace {
                 .collect::<Vec<String>>(),
         );
 
-        let walker = GlobWalkerBuilder::from_patterns(&config.root_path, &paths).build();
+        let walker = GlobWalkerBuilder::from_patterns(&config.root_path, &paths).build()?;
 
-        match walker {
-            Ok(walker) => {
-                for entry in walker.into_iter().filter_map(Result::ok) {
-                    let manifest_file_path = entry.path().to_path_buf();
-                    let manifest_file_content = read_manifest_file(manifest_file_path.clone())?;
-                    match serde_json::from_str::<PackageJson>(&manifest_file_content) {
-                        Ok(package_json) => workspace_packages.push(WorkspacePackage::new(
-                            package_json.name,
-                            package_json.version,
-                            package_json.dependencies,
-                            package_json.dev_dependencies,
-                            entry.path().parent().unwrap().to_path_buf(),
-                        )),
-                        Err(_) => return Err(format!("Fail to parse {:?}", manifest_file_path,)),
-                    }
-                }
-
-                if workspace_packages.len() == 0 {
-                    Err(format!("No packages were found in workspace"))
-                } else {
-                    Ok(Workspace { workspace_packages })
+        for entry in walker.into_iter().filter_map(Result::ok) {
+            let manifest_file_path = entry.path().to_path_buf();
+            let manifest_file_content = read_manifest_file(manifest_file_path.clone())?;
+            match serde_json::from_str::<PackageJson>(&manifest_file_content) {
+                Ok(package_json) => workspace_packages.push(WorkspacePackage::new(
+                    package_json.name,
+                    package_json.version,
+                    package_json.dependencies,
+                    package_json.dev_dependencies,
+                    entry.path().parent().unwrap().to_path_buf(),
+                )),
+                Err(_) => {
+                    return Err(JmError::new(format!(
+                        "Fail to parse {:?}",
+                        manifest_file_path,
+                    )))
                 }
             }
-            Err(err) => Err(String::from(err.to_string())),
+        }
+
+        if workspace_packages.len() == 0 {
+            Err(JmError::new(format!("No packages were found in workspace")))
+        } else {
+            Ok(Workspace { workspace_packages })
         }
     }
 
@@ -104,10 +105,10 @@ mod tests {
 
             assert_eq!(
                 result,
-                Err(format!(
+                Err(JmError::new(format!(
                     "Fail to parse {:?}",
                     path.join("packages").join("p1").join("package.json"),
-                ))
+                )))
             )
         });
     }
@@ -132,7 +133,7 @@ mod tests {
 
             assert_eq!(
                 result,
-                Err(String::from("No packages were found in workspace"))
+                Err(JmError::new(String::from("No packages were found in workspace")))
             )
         });
     }

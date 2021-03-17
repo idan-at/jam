@@ -22,6 +22,9 @@ petgraph = "0.5.1"
 array_tool = "1.0.3"
 dashmap = "4.0.2"
 async-trait = "0.1.48"
+tar = "0.4.33"
+flate2 = "1.0.14"
+cached-path = "0.5.0"
 
 [dev-dependencies]
 jm-test-utils = { path = "../jm-test-utils" }

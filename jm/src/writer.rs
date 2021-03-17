@@ -1,6 +1,9 @@
 use crate::config::Config;
+use crate::downloader::Downloader;
+use jm_core::errors::JmError;
 use jm_core::package::NpmPackage;
 use jm_core::package::Package;
+use log::debug;
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::visit::Dfs;
 
@@ -9,23 +12,26 @@ use std::path::PathBuf;
 
 pub struct Writer {
     store_path: PathBuf,
+    downloader: Downloader,
 }
 
 impl Writer {
-    pub fn new(config: &Config) -> Result<Writer, String> {
+    pub fn new(config: &Config, downloader: Downloader) -> Result<Writer, JmError> {
         let store_path = config.root_path.as_path().join("node_modules").join(".jm");
 
-        match fs::create_dir_all(&store_path) {
-            Ok(_) => Ok(Writer { store_path }),
-            Err(err) => Err(String::from(err.to_string())),
-        }
+        fs::create_dir_all(&store_path)?;
+
+        Ok(Writer {
+            store_path,
+            downloader,
+        })
     }
 
     pub fn write(
         &self,
         starting_nodes: Vec<NodeIndex>,
         graph: &Graph<Package, ()>,
-    ) -> Result<(), String> {
+    ) -> Result<(), JmError> {
         for node in starting_nodes {
             let mut dfs = Dfs::new(graph, node);
             while let Some(nx) = dfs.next(graph) {
@@ -38,15 +44,15 @@ impl Writer {
         Ok(())
     }
 
-    fn write_package(&self, package: &Package) -> Result<(), String> {
+    fn write_package(&self, package: &Package) -> Result<(), JmError> {
         match package {
             Package::Package(npm_package) => {
                 let path = self.package_path(npm_package);
+                debug!("Creating directory {:?}", &path);
 
-                match fs::create_dir(&path) {
-                    Ok(_) => {}
-                    Err(err) => return Err(String::from(err.to_string())),
-                }
+                // TODO: test both scoped and non scoped packages
+                fs::create_dir_all(&path)?;
+                self.downloader.download_to(&npm_package.tarball_url, &path)?;
             }
             Package::WorkspacePackage(workspace_package) => {
                 println!("Ignoring workspace package {:?}", workspace_package)

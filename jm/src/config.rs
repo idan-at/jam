@@ -1,3 +1,4 @@
+use jm_core::errors::JmError;
 use serde::Deserialize;
 use std::path::PathBuf;
 
@@ -18,12 +19,12 @@ impl Config {
         root_path: PathBuf,
         manifest_file_content: &str,
         registry: &str,
-    ) -> Result<Config, String> {
+    ) -> Result<Config, JmError> {
         match serde_json::from_str::<Manifest>(&manifest_file_content) {
         Ok(manifest) => Ok(Config { root_path, patterns: manifest.workspaces, registry: String::from(registry) }),
-        Err(_) => Err(String::from(
+        Err(_) => Err(JmError::new(String::from(
           "Fail to parse manifest file, please make sure it is a valid JSON and 'workspaces' array exists",
-        ))
+        ) ))
       }
     }
 }
@@ -41,7 +42,7 @@ mod tests {
 
         let result = Config::new(root_path, content, registry);
 
-        assert_eq!(result, Err("Fail to parse manifest file, please make sure it is a valid JSON and 'workspaces' array exists".to_string()))
+        assert_eq!(result, Err(JmError::new(String::from("Fail to parse manifest file, please make sure it is a valid JSON and 'workspaces' array exists".to_string() ))));
     }
 
     #[test]

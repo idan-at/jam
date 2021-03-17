@@ -4,12 +4,14 @@ pub mod npm;
 mod commands;
 mod common;
 mod config;
+mod downloader;
 mod resolver;
 mod root_locator;
 mod workspace;
 mod writer;
 
 use crate::cli_opts::Opts;
+use jm_core::errors::JmError;
 use log::debug;
 use std::path::PathBuf;
 
@@ -21,7 +23,7 @@ use root_locator::find_root_dir;
 use workspace::Workspace;
 use writer::Writer;
 
-pub async fn run(cwd: PathBuf, opts: Opts) -> Result<(), String> {
+pub async fn run(cwd: PathBuf, opts: Opts) -> Result<(), JmError> {
     let root_path = find_root_dir(cwd)?;
     debug!("Root path {:?}", root_path);
 

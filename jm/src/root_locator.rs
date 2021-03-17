@@ -1,8 +1,9 @@
+use jm_core::errors::JmError;
 use std::path::PathBuf;
 
 const MANIFEST_FILE_NAME: &'static str = "jm.json";
 
-pub fn find_root_dir(cwd: PathBuf) -> Result<PathBuf, String> {
+pub fn find_root_dir(cwd: PathBuf) -> Result<PathBuf, JmError> {
     let possible_manifest_file_path = cwd.join(MANIFEST_FILE_NAME);
 
     if possible_manifest_file_path.exists() {
@@ -10,10 +11,10 @@ pub fn find_root_dir(cwd: PathBuf) -> Result<PathBuf, String> {
     } else {
         match cwd.parent() {
             Some(parent) => find_root_dir(parent.to_path_buf()),
-            None => Err(format!(
+            None => Err(JmError::new(format!(
                 "Couldn't find root directory. Make sure {} exists",
                 MANIFEST_FILE_NAME
-            )),
+            ))),
         }
     }
 }
@@ -31,9 +32,9 @@ mod tests {
 
             assert_eq!(
                 result,
-                Err(String::from(
+                Err(JmError::new(String::from(
                     "Couldn't find root directory. Make sure jm.json exists"
-                ))
+                )))
             );
         })
     }

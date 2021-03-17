@@ -1,11 +1,13 @@
 mod collector;
 
 pub mod dependency;
+pub mod errors;
 pub mod package;
 pub mod resolver;
 
 use crate::collector::Collector;
 use crate::dependency::Dependency;
+use crate::errors::JmError;
 use crate::package::Package;
 use crate::resolver::PackageResolver;
 use futures::StreamExt;
@@ -17,7 +19,7 @@ const CONCURRENCY: usize = 50;
 pub async fn build_graph(
     base: Vec<Package>,
     resolver: &dyn PackageResolver,
-) -> Result<(Vec<NodeIndex>, Graph<Package, ()>), String> {
+) -> Result<(Vec<NodeIndex>, Graph<Package, ()>), JmError> {
     let collector = Collector::new();
     let mut graph: Graph<Package, ()> = Graph::new();
 
@@ -44,7 +46,7 @@ pub async fn build_graph(
         .collect::<Vec<Result<_, _>>>()
         .await
         .into_iter()
-        .collect::<Result<Vec<(Package, &Dependency)>, String>>()?;
+        .collect::<Result<Vec<(Package, &Dependency)>, JmError>>()?;
 
         let new_packages: Vec<(Package, &Dependency)> = dependencies_packages
             .into_iter()
