@@ -1,7 +1,7 @@
 use globwalk::GlobError;
-use std::io;
-use std::fmt::{Display, Formatter, Error};
 use reqwest;
+use std::fmt::{Display, Error, Formatter};
+use std::io;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct JmError {

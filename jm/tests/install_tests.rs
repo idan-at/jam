@@ -1,10 +1,10 @@
 mod common;
 mod npm_mock_server;
 
-use jm_core::errors::JmError;
 use common::*;
 use jm::cli_opts::{Command, Install, Opts};
 use jm::run;
+use jm_core::errors::JmError;
 use jm_test_utils::async_helpers::*;
 use jm_test_utils::common::*;
 use maplit::hashmap;
@@ -48,7 +48,9 @@ async fn with_empty_mono_repo() {
 
         assert_eq!(
             result,
-            Err(JmError::new(String::from("No packages were found in workspace")))
+            Err(JmError::new(String::from(
+                "No packages were found in workspace"
+            )))
         )
     })
     .await;
@@ -70,11 +72,20 @@ async fn with_simple_mono_repo() {
             "lodash".to_string() => "~4.17.0".to_string()
         }),
         None,
+        format!("{}/tarball/{}", npm_mock_server.url(), "lib"),
     );
-    let lodash_metadata = with_npm_package_metadata("4.17.21", None, None);
+    let lodash_metadata = with_npm_package_metadata(
+        "4.17.21",
+        None,
+        None,
+        format!("{}/tarball/{}", npm_mock_server.url(), "lodash"),
+    );
 
     npm_mock_server.with_metadata("lib", &lib_metadata);
+    npm_mock_server.with_tarball_data("lib", hashmap! { "file.js".to_string() => "const x = 1;".to_string() });
+
     npm_mock_server.with_metadata("lodash", &lodash_metadata);
+    npm_mock_server.with_tarball_data("lodash", hashmap! { "file.js".to_string() => "const x = 2;".to_string() });
 
     given_mono_repo_with(contents, |path| async move {
         let opts = Opts {
@@ -105,6 +116,7 @@ async fn with_mono_repo_with_cyclic_dependencies() {
             "lodash".to_string() => "~4.17.0".to_string()
         }),
         None,
+        format!("{}/tarball/{}", npm_mock_server.url(), "lib"),
     );
     let lodash_metadata = with_npm_package_metadata(
         "4.17.21",
@@ -112,10 +124,14 @@ async fn with_mono_repo_with_cyclic_dependencies() {
             "lib".to_string() => "^1.0.0".to_string()
         }),
         None,
+        format!("{}/tarball/{}", npm_mock_server.url(), "lodash"),
     );
 
     npm_mock_server.with_metadata("lib", &lib_metadata);
+    npm_mock_server.with_tarball_data("lib", hashmap! { "file.js".to_string() => "const x = 1;".to_string() });
+
     npm_mock_server.with_metadata("lodash", &lodash_metadata);
+    npm_mock_server.with_tarball_data("lodash", hashmap! { "file.js".to_string() => "const x = 2;".to_string() });
 
     given_mono_repo_with(contents, |path| async move {
         let opts = Opts {

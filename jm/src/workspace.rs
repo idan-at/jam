@@ -133,7 +133,9 @@ mod tests {
 
             assert_eq!(
                 result,
-                Err(JmError::new(String::from("No packages were found in workspace")))
+                Err(JmError::new(String::from(
+                    "No packages were found in workspace"
+                )))
             )
         });
     }

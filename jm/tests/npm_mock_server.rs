@@ -1,7 +1,14 @@
+use flate2::write::GzEncoder;
+use flate2::Compression;
 use httpmock::Method::GET;
 use httpmock::MockServer;
 use jm::npm::NpmPackageMetadata;
 use reqwest::blocking::Client;
+use std::collections::HashMap;
+use std::env;
+use std::fs;
+use std::fs::File;
+use tempdir::TempDir;
 use urlencoding::encode;
 
 pub struct NpmMockServer {
@@ -28,6 +35,34 @@ impl NpmMockServer {
                 .body(serde_json::to_string(package_metadata).unwrap());
         });
     }
+
+    pub fn with_tarball_data(&mut self, package_name: &str, files: HashMap<String, String>) {
+        let tar_gz_path = env::temp_dir().join(package_name);
+        fs::create_dir_all(tar_gz_path.parent().unwrap()).unwrap();
+
+        let tmp_dir = TempDir::new("jm-tarballs").unwrap();
+
+        let tar_gz = File::create(&tar_gz_path).unwrap();
+        let enc = GzEncoder::new(tar_gz, Compression::default());
+        let mut tar = tar::Builder::new(enc);
+
+        for (name, content) in files {
+            let file_path = tmp_dir.path().to_path_buf().join(name);
+            fs::write(file_path, content).unwrap();
+        }
+
+        tar.append_dir_all(".", tmp_dir.path().to_str().unwrap())
+            .unwrap();
+
+        let expected_path = format!("/tarball/{}", encode(package_name));
+
+        self.server.mock(|when, then| {
+            when.method(GET).path(expected_path);
+            then.status(200)
+                .header("content-type", "application/octet-stream")
+                .body_from_file(tar_gz_path.to_str().unwrap());
+        });
+    }
 }
 
 #[cfg(test)]
@@ -38,7 +73,7 @@ mod tests {
     use maplit::hashmap;
 
     #[test]
-    fn works_for_package() {
+    fn metadata_works_for_package() {
         let mut server = NpmMockServer::new();
         let client = Client::new();
 
@@ -68,7 +103,7 @@ mod tests {
     }
 
     #[test]
-    fn works_for_scoped_package() {
+    fn metadata_works_for_scoped_package() {
         let mut server = NpmMockServer::new();
         let client = Client::new();
 
@@ -95,5 +130,47 @@ mod tests {
 
         assert_eq!(status, 200);
         assert_eq!(body, expected);
+    }
+
+    #[test]
+    fn download_tarball_works_for_package() {
+        let mut server = NpmMockServer::new();
+        let client = Client::new();
+
+        let files = hashmap! {
+          "file1".to_string() => "hello".to_string()
+        };
+
+        server.with_tarball_data("some-lib", files);
+
+        let url = format!("{}/tarball/{}", server.url(), "some-lib");
+        let response = client.get(&url).send().unwrap();
+
+        let status = response.status();
+        let body = response.text().unwrap();
+
+        assert_eq!(status, 200);
+        assert!(body.len() > 0);
+    }
+
+    #[test]
+    fn download_tarball_works_for_scoped_package() {
+        let mut server = NpmMockServer::new();
+        let client = Client::new();
+
+        let files = hashmap! {
+          "file1".to_string() => "hello".to_string()
+        };
+
+        server.with_tarball_data("@types/lodash", files);
+
+        let url = format!("{}/tarball/%40types%2Flodash", server.url());
+        let response = client.get(&url).send().unwrap();
+
+        let status = response.status();
+        let body = response.text().unwrap();
+
+        assert_eq!(status, 200);
+        assert!(body.len() > 0);
     }
 }

@@ -31,3 +31,4 @@ jm-test-utils = { path = "../jm-test-utils" }
 maplit = "1.0.2"
 httpmock = "0.5.5"
 reqwest = { version = "0.11.0", features = ["blocking"] }
+tempdir = "0.3.7"
