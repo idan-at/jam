@@ -17,15 +17,18 @@ const CONCURRENCY: usize = 50;
 pub async fn build_graph(
     base: Vec<Package>,
     resolver: &dyn PackageResolver,
-) -> Result<Graph<Package, ()>, String> {
+) -> Result<(Vec<NodeIndex>, Graph<Package, ()>), String> {
     let collector = Collector::new();
     let mut graph: Graph<Package, ()> = Graph::new();
 
     let mut list = base;
+    let mut starting_nodes = vec![];
     let mut seen: HashMap<Package, NodeIndex> = HashMap::new();
 
     list.iter().for_each(|package| {
         let node = graph.add_node(package.clone());
+
+        starting_nodes.push(node.clone());
         seen.insert(package.clone(), node);
     });
 
@@ -72,5 +75,5 @@ pub async fn build_graph(
             .collect();
     }
 
-    Ok(graph)
+    Ok((starting_nodes, graph))
 }

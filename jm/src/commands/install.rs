@@ -10,11 +10,11 @@ pub async fn install(config: &Config) -> Result<(), String> {
     let fetcher = Fetcher::new(config.registry.clone());
     let resolver = Resolver::new(fetcher);
 
-    let graph = build_graph(workspace.packages(), &resolver).await?;
+    let (starting_nodes, graph) = build_graph(workspace.packages(), &resolver).await?;
 
     let writer = Writer::new(&config)?;
 
-    writer.write(&graph)?;
+    writer.write(starting_nodes, &graph)?;
 
     Ok(())
 }

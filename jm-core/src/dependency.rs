@@ -1,6 +1,6 @@
 use semver::{Compat, VersionReq};
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub struct Dependency {
     pub name: String,
     pub real_name: String,

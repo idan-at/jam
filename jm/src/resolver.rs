@@ -59,7 +59,8 @@ impl Resolver {
             dependency.name.to_string(),
             version.to_string(),
             Some(version_metadata.dependencies.clone()),
-            None,
+            version_metadata.shasum.clone(),
+            version_metadata.tarball.clone(),
         )))
     }
 

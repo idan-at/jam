@@ -79,7 +79,6 @@ impl Workspace {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use jm_core::package::NpmPackage;
     use jm_test_utils::common::*;
     use jm_test_utils::sync_helpers::*;
     use maplit::hashmap;
@@ -160,13 +159,11 @@ mod tests {
                 result,
                 Ok(Workspace {
                     workspace_packages: vec![WorkspacePackage {
-                        package: NpmPackage {
-                            name: String::from("p1"),
-                            version: String::from("1.0.0"),
-                            dependencies: vec![],
-                            dev_dependencies: vec![],
-                        },
-                        base_path: path.join("packages").join("p1")
+                        base_path: path.join("packages").join("p1"),
+                        name: String::from("p1"),
+                        version: String::from("1.0.0"),
+                        dependencies: vec![],
+                        dev_dependencies: vec![],
                     }]
                 })
             )
@@ -197,22 +194,18 @@ mod tests {
                 Ok(Workspace {
                     workspace_packages: vec![
                         WorkspacePackage {
-                            package: NpmPackage {
-                                name: String::from("p2"),
-                                version: String::from("1.1.0"),
-                                dependencies: vec![],
-                                dev_dependencies: vec![],
-                            },
-                            base_path: path.join("packages").join("p2")
+                            base_path: path.join("packages").join("p2"),
+                            name: String::from("p2"),
+                            version: String::from("1.1.0"),
+                            dependencies: vec![],
+                            dev_dependencies: vec![],
                         },
                         WorkspacePackage {
-                            package: NpmPackage {
-                                name: String::from("p1"),
-                                version: String::from("1.0.0"),
-                                dependencies: vec![],
-                                dev_dependencies: vec![],
-                            },
-                            base_path: path.join("packages").join("p1")
+                            base_path: path.join("packages").join("p1"),
+                            name: String::from("p1"),
+                            version: String::from("1.0.0"),
+                            dependencies: vec![],
+                            dev_dependencies: vec![],
                         }
                     ]
                 })
@@ -243,13 +236,11 @@ mod tests {
                 result,
                 Ok(Workspace {
                     workspace_packages: vec![WorkspacePackage {
-                        package: NpmPackage {
-                            name: String::from("p1"),
-                            version: String::from("1.0.0"),
-                            dependencies: vec![],
-                            dev_dependencies: vec![],
-                        },
-                        base_path: path.join("packages").join("p1")
+                        base_path: path.join("packages").join("p1"),
+                        name: String::from("p1"),
+                        version: String::from("1.0.0"),
+                        dependencies: vec![],
+                        dev_dependencies: vec![],
                     }]
                 })
             )
@@ -279,13 +270,11 @@ mod tests {
                 result,
                 Ok(Workspace {
                     workspace_packages: vec![WorkspacePackage {
-                        package: NpmPackage {
-                            name: String::from("p1"),
-                            version: String::from("1.0.0"),
-                            dependencies: vec![],
-                            dev_dependencies: vec![],
-                        },
-                        base_path: path.join("packages").join("p1")
+                        base_path: path.join("packages").join("p1"),
+                        name: String::from("p1"),
+                        version: String::from("1.0.0"),
+                        dependencies: vec![],
+                        dev_dependencies: vec![],
                     }]
                 })
             )
@@ -294,29 +283,21 @@ mod tests {
 
     #[test]
     fn test_get_packages() {
-        let p1 = NpmPackage {
-            name: String::from("p1"),
-            version: String::from("1.0.0"),
-            dependencies: vec![],
-            dev_dependencies: vec![],
-        };
-
-        let p2 = NpmPackage {
-            name: String::from("p2"),
-            version: String::from("2.0.0"),
-            dependencies: vec![],
-            dev_dependencies: vec![],
-        };
-
         let workspace = Workspace {
             workspace_packages: vec![
                 WorkspacePackage {
-                    package: p1.clone(),
                     base_path: PathBuf::new(),
+                    name: String::from("p1"),
+                    version: String::from("1.0.0"),
+                    dependencies: vec![],
+                    dev_dependencies: vec![],
                 },
                 WorkspacePackage {
-                    package: p2.clone(),
                     base_path: PathBuf::new(),
+                    name: String::from("p2"),
+                    version: String::from("2.0.0"),
+                    dependencies: vec![],
+                    dev_dependencies: vec![],
                 },
             ],
         };

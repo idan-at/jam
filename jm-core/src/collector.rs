@@ -45,8 +45,8 @@ mod tests {
             version_or_dist_tag: "latest".to_string(),
         };
         let dep2 = Dependency {
-            name: "dep1".to_string(),
-            real_name: "dep1".to_string(),
+            name: "dep2".to_string(),
+            real_name: "dep2".to_string(),
             version_or_dist_tag: "latest".to_string(),
         };
 
@@ -55,16 +55,15 @@ mod tests {
                 name: "p1".to_string(),
                 version: "1.0.0".to_string(),
                 dependencies: vec![dep1.clone(), dep2.clone()],
-                dev_dependencies: vec![],
+                shasum: String::from("shasum"),
+                tarball_url: String::from("tarball-url"),
             }),
             Package::WorkspacePackage(WorkspacePackage {
-                package: NpmPackage {
-                    name: "p2".to_string(),
-                    version: "1.0.0".to_string(),
-                    dependencies: vec![dep2.clone()],
-                    dev_dependencies: vec![],
-                },
                 base_path: PathBuf::new(),
+                name: "p2".to_string(),
+                version: "1.0.0".to_string(),
+                dependencies: vec![dep2.clone()],
+                dev_dependencies: vec![],
             }),
         ];
 

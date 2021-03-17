@@ -8,13 +8,17 @@ pub struct NpmPackage {
     pub name: String,
     pub version: String,
     pub dependencies: Vec<Dependency>,
-    pub dev_dependencies: Vec<Dependency>,
+    pub shasum: String,
+    pub tarball_url: String,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct WorkspacePackage {
     pub base_path: PathBuf,
-    pub package: NpmPackage,
+    pub name: String,
+    pub version: String,
+    pub dependencies: Vec<Dependency>,
+    pub dev_dependencies: Vec<Dependency>,
 }
 
 impl NpmPackage {
@@ -22,9 +26,33 @@ impl NpmPackage {
         name: String,
         version: String,
         dependencies: Option<HashMap<String, String>>,
-        dev_dependencies: Option<HashMap<String, String>>,
+        shasum: String,
+        tarball_url: String,
     ) -> NpmPackage {
         NpmPackage {
+            name,
+            version,
+            dependencies: to_dependencies_list(dependencies),
+            shasum,
+            tarball_url,
+        }
+    }
+
+    fn dependencies(&self) -> Vec<Dependency> {
+        self.dependencies.clone()
+    }
+}
+
+impl WorkspacePackage {
+    pub fn new(
+        name: String,
+        version: String,
+        dependencies: Option<HashMap<String, String>>,
+        dev_dependencies: Option<HashMap<String, String>>,
+        base_path: PathBuf,
+    ) -> WorkspacePackage {
+        WorkspacePackage {
+            base_path,
             name,
             version,
             dependencies: to_dependencies_list(dependencies),
@@ -53,29 +81,6 @@ impl NpmPackage {
     }
 }
 
-impl WorkspacePackage {
-    pub fn new(
-        name: String,
-        version: String,
-        dependencies: Option<HashMap<String, String>>,
-        dev_dependencies: Option<HashMap<String, String>>,
-        base_path: PathBuf,
-    ) -> WorkspacePackage {
-        let package = NpmPackage {
-            name,
-            version,
-            dependencies: to_dependencies_list(dependencies),
-            dev_dependencies: to_dependencies_list(dev_dependencies),
-        };
-
-        WorkspacePackage { package, base_path }
-    }
-
-    fn dependencies(&self) -> Vec<Dependency> {
-        self.package.dependencies()
-    }
-}
-
 fn to_dependencies_list(dependencies: Option<HashMap<String, String>>) -> Vec<Dependency> {
     let dependencies = dependencies.unwrap_or(HashMap::new());
 
@@ -95,14 +100,14 @@ impl Package {
     pub fn name(&self) -> &str {
         match self {
             Package::Package(package) => &package.name,
-            Package::WorkspacePackage(workspace_package) => &workspace_package.package.name,
+            Package::WorkspacePackage(workspace_package) => &workspace_package.name,
         }
     }
 
     pub fn version(&self) -> &str {
         match self {
             Package::Package(package) => &package.version,
-            Package::WorkspacePackage(workspace_package) => &workspace_package.package.version,
+            Package::WorkspacePackage(workspace_package) => &workspace_package.version,
         }
     }
 
@@ -125,7 +130,8 @@ mod tests {
             String::from("some-npm-package"),
             String::from("1.0.0"),
             None,
-            None,
+            String::from("shasum"),
+            String::from("tarball-url"),
         ));
 
         let workspace_package = Package::WorkspacePackage(WorkspacePackage::new(
@@ -143,19 +149,19 @@ mod tests {
     }
 
     #[test]
-    fn npm_package_collects_all_packages_dependencies_and_dev_dependencies() {
+    fn npm_package_collects_all_packages_dependencies() {
         let package = Package::Package(NpmPackage::new(
             String::from("some-package"),
             String::from("1.0.0"),
             Some(hashmap! {
-                "lodash".to_string() => "1.0.0".to_string()
-            }),
-            Some(hashmap! {
+                "lodash".to_string() => "1.0.0".to_string(),
                 "lol".to_string() => "npm:lodash@~2.0.0".to_string()
             }),
+            String::from("shasum"),
+            String::from("tarball-url"),
         ));
 
-        let expected = vec![
+        let mut expected = vec![
             Dependency {
                 name: "lodash".to_string(),
                 real_name: "lodash".to_string(),
@@ -168,7 +174,12 @@ mod tests {
             },
         ];
 
-        assert_eq!(package.dependencies(), expected);
+        let mut result = package.dependencies();
+
+        result.sort();
+        expected.sort();
+
+        assert_eq!(result, expected);
     }
 
     #[test]
@@ -197,28 +208,6 @@ mod tests {
                 version_or_dist_tag: "~2.0.0".to_string(),
             },
         ];
-
-        assert_eq!(package.dependencies(), expected);
-    }
-
-    #[test]
-    fn npm_package_uses_dependencies_over_dev_dependencies_in_case_of_repetitions() {
-        let package = Package::Package(NpmPackage::new(
-            String::from("some-package"),
-            String::from("1.0.0"),
-            Some(hashmap! {
-                "lodash".to_string() => "1.0.0".to_string()
-            }),
-            Some(hashmap! {
-                "lodash".to_string() => "~2.0.0".to_string()
-            }),
-        ));
-
-        let expected = vec![Dependency {
-            name: "lodash".to_string(),
-            real_name: "lodash".to_string(),
-            version_or_dist_tag: "1.0.0".to_string(),
-        }];
 
         assert_eq!(package.dependencies(), expected);
     }

@@ -107,7 +107,8 @@ async fn returns_monorepo_graph() {
             "dep1".to_string(),
             "1.0.0".to_string(),
             None,
-            None,
+            String::from("shasum"),
+            String::from("tarball-url"),
         )),
     );
     resolver.given(
@@ -122,7 +123,8 @@ async fn returns_monorepo_graph() {
             Some(hashmap! {
               "dep3".to_string() => "~2.0.0".to_string()
             }),
-            None,
+            String::from("shasum"),
+            String::from("tarball-url"),
         )),
     );
     resolver.given(
@@ -135,16 +137,18 @@ async fn returns_monorepo_graph() {
             "dep3".to_string(),
             "2.0.5".to_string(),
             None,
-            None,
+            String::from("shasum"),
+            String::from("tarball-url"),
         )),
     );
 
-    let graph = build_graph(base, &resolver).await;
+    let result = build_graph(base, &resolver).await;
 
-    assert!(graph.is_ok());
+    assert!(result.is_ok());
 
-    let graph = graph.unwrap();
+    let (starting_nodes, graph) = result.unwrap();
 
+    assert_eq!(starting_nodes.len(), 2);
     assert_eq!(graph.edge_count(), 4);
     assert_eq!(graph.node_count(), 5);
 }
