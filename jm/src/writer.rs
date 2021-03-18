@@ -55,7 +55,7 @@ impl Writer {
                 self.downloader.download_to(&npm_package, &path).await?;
             }
             Package::WorkspacePackage(workspace_package) => {
-                println!("Ignoring workspace package {:?}", workspace_package)
+                debug!("Ignoring workspace package {:?}", workspace_package)
             }
         }
 
