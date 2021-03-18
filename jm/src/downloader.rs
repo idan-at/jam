@@ -36,11 +36,12 @@ impl Downloader {
         let mut archive = Archive::new(tar);
 
         for mut entry in archive.entries()?.filter_map(|e| e.ok()) {
-            let file_path = entry.path()?.strip_prefix(NPM_PACK_PATH_PREFIX).unwrap().to_owned();
+            let file_inner_path = entry.path()?.strip_prefix(NPM_PACK_PATH_PREFIX).unwrap().to_owned();
+            let file_path =  path.join(&file_inner_path);
 
             fs::create_dir_all(&file_path.parent().unwrap())?;
 
-            entry.unpack(path.join(file_path))?;
+            entry.unpack(file_path)?;
         }
 
         Ok(())
