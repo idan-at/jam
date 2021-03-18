@@ -10,6 +10,8 @@ use std::path::Path;
 use std::path::PathBuf;
 use tar::Archive;
 
+const NPM_PACK_PATH_PREFIX: &'static str = "package";
+
 pub struct Downloader {
     client: Client,
     cache_dir: PathBuf,
@@ -32,7 +34,12 @@ impl Downloader {
         let tar_gz = File::open(archive_path)?;
         let tar = GzDecoder::new(tar_gz);
         let mut archive = Archive::new(tar);
-        archive.unpack(path)?;
+
+        for mut entry in archive.entries()?.filter_map(|e| e.ok()) {
+            let file_path = entry.path()?.strip_prefix(NPM_PACK_PATH_PREFIX).unwrap().to_owned();
+
+            entry.unpack(path.join(file_path))?;
+        }
 
         Ok(())
     }
