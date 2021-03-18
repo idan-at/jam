@@ -82,10 +82,16 @@ async fn with_simple_mono_repo() {
     );
 
     npm_mock_server.with_metadata("lib", &lib_metadata);
-    npm_mock_server.with_tarball_data("lib", hashmap! { "file.js".to_string() => "const x = 1;".to_string() });
+    npm_mock_server.with_tarball_data(
+        "lib",
+        hashmap! { "file.js".to_string() => "const x = 1;".to_string() },
+    );
 
     npm_mock_server.with_metadata("lodash", &lodash_metadata);
-    npm_mock_server.with_tarball_data("lodash", hashmap! { "file.js".to_string() => "const x = 2;".to_string() });
+    npm_mock_server.with_tarball_data(
+        "lodash",
+        hashmap! { "file.js".to_string() => "const x = 2;".to_string() },
+    );
 
     given_mono_repo_with(contents, |path| async move {
         let opts = Opts {
@@ -128,10 +134,16 @@ async fn with_mono_repo_with_cyclic_dependencies() {
     );
 
     npm_mock_server.with_metadata("lib", &lib_metadata);
-    npm_mock_server.with_tarball_data("lib", hashmap! { "file.js".to_string() => "const x = 1;".to_string() });
+    npm_mock_server.with_tarball_data(
+        "lib",
+        hashmap! { "file.js".to_string() => "const x = 1;".to_string() },
+    );
 
     npm_mock_server.with_metadata("lodash", &lodash_metadata);
-    npm_mock_server.with_tarball_data("lodash", hashmap! { "file.js".to_string() => "const x = 2;".to_string() });
+    npm_mock_server.with_tarball_data(
+        "lodash",
+        hashmap! { "file.js".to_string() => "const x = 2;".to_string() },
+    );
 
     given_mono_repo_with(contents, |path| async move {
         let opts = Opts {

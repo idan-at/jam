@@ -3,12 +3,12 @@ use flate2::read::GzDecoder;
 use jm_core::errors::JmError;
 use jm_core::package::NpmPackage;
 use reqwest::Client;
+use std::fs;
 use std::fs::File;
-use std::io::copy;
+use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 use tar::Archive;
-use std::fs;
 
 pub struct Downloader {
     client: Client,
@@ -30,9 +30,8 @@ impl Downloader {
         let archive_path = self.download_tar(package).await?;
 
         let tar_gz = File::open(archive_path)?;
-        // let tar = GzDecoder::new(tar_gz);
-        // let mut archive = Archive::new(tar);
-        let mut archive = Archive::new(tar_gz);
+        let tar = GzDecoder::new(tar_gz);
+        let mut archive = Archive::new(tar);
         archive.unpack(path)?;
 
         Ok(())
@@ -47,8 +46,9 @@ impl Downloader {
 
         let response = self.client.get(&package.tarball_url).send().await?;
         let mut target = File::create(&archive_path)?;
-        let content = response.text().await?;
-        copy(&mut content.as_bytes(), &mut target)?;
+        let content = response.bytes().await?;
+
+        target.write_all(content.as_ref())?;
 
         Ok(archive_path)
     }
