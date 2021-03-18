@@ -45,10 +45,10 @@ impl Archiver for DefaultArchiver {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-use tempdir::TempDir;
     use super::*;
     use std::env;
+    use std::path::PathBuf;
+    use tempdir::TempDir;
 
     fn context() -> PathBuf {
         env::current_dir().unwrap().join("tests").join("fixtures")
