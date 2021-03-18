@@ -42,3 +42,63 @@ impl Archiver for DefaultArchiver {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+use tempdir::TempDir;
+    use super::*;
+    use std::env;
+
+    fn context() -> PathBuf {
+        env::current_dir().unwrap().join("tests").join("fixtures")
+    }
+
+    #[test]
+    fn extracts_archive_to_given_path_while_ignoring_the_pack_prefix() {
+        let archiver = DefaultArchiver::new();
+        let tmp_dir = TempDir::new("jm-archiver").unwrap();
+
+        let fixtures_path = context();
+        let archive_path = fixtures_path.join("simple.tgz");
+
+        let expected_file_path = tmp_dir.path().join("package.json");
+
+        let result = archiver.extract_to(&archive_path, tmp_dir.path());
+
+        assert!(result.is_ok());
+        assert!(expected_file_path.exists());
+    }
+
+    #[test]
+    fn extracts_archive_to_given_path_even_if_pack_prefix_does_not_exist() {
+        let archiver = DefaultArchiver::new();
+        let tmp_dir = TempDir::new("jm-archiver").unwrap();
+
+        let fixtures_path = context();
+        let archive_path = fixtures_path.join("no_pack_prefix.tgz");
+
+        let expected_file_path = tmp_dir.path().join("package.json");
+
+        let result = archiver.extract_to(&archive_path, tmp_dir.path());
+
+        assert!(result.is_ok());
+        assert!(expected_file_path.exists());
+    }
+
+    #[test]
+    fn does_not_fail_on_archives_packed_with_root_permissions() {
+        let archiver = DefaultArchiver::new();
+        let tmp_dir = TempDir::new("jm-archiver").unwrap();
+
+        let fixtures_path = context();
+        let archive_path = fixtures_path.join("root_permissions.tgz");
+
+        let expected_file_path = tmp_dir.path().join("package.json");
+
+        let result = archiver.extract_to(&archive_path, tmp_dir.path());
+
+        assert!(result.is_ok());
+        assert!(expected_file_path.exists());
+    }
+}
