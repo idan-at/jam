@@ -71,6 +71,7 @@ impl<'a> Writer<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::archiver::DefaultArchiver;
     use crate::downloader::TarDownloader;
     use async_trait::async_trait;
     use jm_core::package::WorkspacePackage;
@@ -118,7 +119,8 @@ mod tests {
     fn new_creates_store_folder() {
         let tmp_dir = TempDir::new("jm-writer").unwrap();
 
-        let downloader = TarDownloader::new();
+        let archiver = DefaultArchiver::new();
+        let downloader = TarDownloader::new(&archiver);
         let _ = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
 
         let expected_path = tmp_dir.path().join("node_modules").join(".jm");

@@ -1,3 +1,4 @@
+use crate::archiver::DefaultArchiver;
 use crate::downloader::TarDownloader;
 use crate::npm::Fetcher;
 use crate::resolver::Resolver;
@@ -14,7 +15,8 @@ pub async fn install(config: &Config) -> Result<(), JmError> {
 
     let (starting_nodes, graph) = build_graph(workspace.packages(), &resolver).await?;
 
-    let downloader = TarDownloader::new();
+    let archiver = DefaultArchiver::new();
+    let downloader = TarDownloader::new(&archiver);
     let writer = Writer::new(config.root_path.as_path(), &downloader)?;
 
     writer.write(starting_nodes, &graph).await?;

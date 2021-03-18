@@ -1,37 +1,35 @@
+use crate::archiver::Archiver;
 use async_trait::async_trait;
 use directories::ProjectDirs;
-use flate2::read::GzDecoder;
 use jm_core::errors::JmError;
 use jm_core::package::NpmPackage;
-use log::debug;
+use log::{debug, info};
 use reqwest::Client;
-use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 use std::time::Instant;
-use tar::Archive;
-
-const NPM_PACK_PATH_PREFIX: &'static str = "package";
 
 #[async_trait]
 pub trait Downloader {
     async fn download_to(&self, package: &NpmPackage, path: &Path) -> Result<(), JmError>;
 }
 
-pub struct TarDownloader {
+pub struct TarDownloader<'a> {
     client: Client,
     cache_dir: PathBuf,
+    archiver: &'a dyn Archiver,
 }
 
-impl TarDownloader {
-    pub fn new() -> TarDownloader {
+impl<'a> TarDownloader<'a> {
+    pub fn new(archiver: &'a dyn Archiver) -> TarDownloader {
         let project_dirs = ProjectDirs::from("com", "jm", "jm").unwrap();
 
         TarDownloader {
             client: Client::new(),
             cache_dir: project_dirs.cache_dir().to_path_buf(),
+            archiver,
         }
     }
 
@@ -56,30 +54,15 @@ impl TarDownloader {
     }
 }
 
-// TODO: test
 #[async_trait]
-impl Downloader for TarDownloader {
+impl<'a> Downloader for TarDownloader<'a> {
     async fn download_to(&self, package: &NpmPackage, path: &Path) -> Result<(), JmError> {
         debug!("Downloading tar of {} to {:?}", package.name, path);
         let now = Instant::now();
         let archive_path = self.download_tar(package).await?;
 
-        let tar_gz = File::open(archive_path)?;
-        let tar = GzDecoder::new(tar_gz);
-        let mut archive = Archive::new(tar);
-
-        for mut entry in archive.entries()?.filter_map(|e| e.ok()) {
-            let entry_path = entry.path()?;
-            let file_inner_path = match entry_path.strip_prefix(NPM_PACK_PATH_PREFIX) {
-                Ok(stripped_path) => stripped_path.to_owned(),
-                Err(_) => entry_path.to_path_buf(),
-            };
-
-            let file_path = path.join(&file_inner_path);
-            fs::create_dir_all(&file_path.parent().unwrap())?;
-
-            entry.unpack(file_path)?;
-        }
+        info!("Extracting {} to {:?}", package.name, path);
+        self.archiver.extract_to(&archive_path, path)?;
 
         debug!(
             "Successfully extracted {} package tar in {} milliseconds",
@@ -88,5 +71,110 @@ impl Downloader for TarDownloader {
         );
 
         Ok(())
+    }
+}
+
+// TODO: Fake server to serve the tarballs.
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{Arc, Mutex};
+    use tempdir::TempDir;
+
+    #[tokio::test]
+    async fn fails_when_archiver_fails() {
+        struct FailingArchiver {}
+
+        impl Archiver for FailingArchiver {
+            fn extract_to(&self, _tarball_path: &Path, _target_path: &Path) -> Result<(), JmError> {
+                Err(JmError::new(String::from("Failing archiver")))
+            }
+        }
+
+        let package = NpmPackage::new(
+            "p1".to_string(),
+            "1.0.0".to_string(),
+            None,
+            "shasum".to_string(),
+            "tarball-url".to_string(),
+        );
+        let path = PathBuf::new();
+
+        let archiver = FailingArchiver {};
+        let downloader = TarDownloader::new(&archiver);
+
+        let result = downloader.download_to(&package, path.as_path()).await;
+
+        assert_eq!(result, Err(JmError::new(String::from("Failing archiver"))));
+    }
+
+    #[tokio::test]
+    async fn calls_the_archiver_with_the_tar_path_and_target_path() {
+        struct MockArchiver {
+            pub called_with: Arc<Mutex<Vec<PathBuf>>>,
+        }
+
+        impl MockArchiver {
+            pub fn new() -> MockArchiver {
+                MockArchiver {
+                    called_with: Arc::new(Mutex::new(vec![])),
+                }
+            }
+        }
+
+        impl Archiver for MockArchiver {
+            fn extract_to(&self, tarball_path: &Path, target_path: &Path) -> Result<(), JmError> {
+                let mut lock = self.called_with.lock().unwrap();
+
+                (*lock).push(tarball_path.to_path_buf());
+                (*lock).push(target_path.to_path_buf());
+
+                Ok(())
+            }
+        }
+
+        let package = NpmPackage::new(
+            "p1".to_string(),
+            "1.0.0".to_string(),
+            None,
+            "shasum".to_string(),
+            "tarball-url".to_string(),
+        );
+        let scoped_package = NpmPackage::new(
+            "@scoped/p1".to_string(),
+            "2.0.0".to_string(),
+            None,
+            "shasum".to_string(),
+            "tarball-url".to_string(),
+        );
+        let tarballs_dir = ProjectDirs::from("com", "jm", "jm")
+            .unwrap()
+            .cache_dir()
+            .to_path_buf();
+
+        let tmp_dir = TempDir::new("jm-downloader").unwrap();
+
+        let archiver = MockArchiver::new();
+        let downloader = TarDownloader::new(&archiver);
+
+        downloader
+            .download_to(&package, tmp_dir.path())
+            .await
+            .unwrap();
+        downloader
+            .download_to(&scoped_package, tmp_dir.path())
+            .await
+            .unwrap();
+
+        let expected_paths = vec![
+            tarballs_dir.join("p1@1.0.0"),
+            tmp_dir.path().to_path_buf(),
+            tarballs_dir.join("@scoped_p1@2.0.0"),
+            tmp_dir.path().to_path_buf(),
+        ];
+
+        let called_with = archiver.called_with.lock().unwrap();
+
+        assert_eq!(*called_with, expected_paths);
     }
 }
