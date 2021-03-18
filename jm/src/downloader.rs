@@ -36,9 +36,13 @@ impl Downloader {
         let mut archive = Archive::new(tar);
 
         for mut entry in archive.entries()?.filter_map(|e| e.ok()) {
-            let file_inner_path = entry.path()?.strip_prefix(NPM_PACK_PATH_PREFIX).unwrap().to_owned();
-            let file_path =  path.join(&file_inner_path);
+            let entry_path = entry.path()?;
+            let file_inner_path = match entry_path.strip_prefix(NPM_PACK_PATH_PREFIX) {
+                Ok(stripped_path) => stripped_path.to_owned(),
+                Err(_) => entry_path.to_path_buf(),
+            };
 
+            let file_path =  path.join(&file_inner_path);
             fs::create_dir_all(&file_path.parent().unwrap())?;
 
             entry.unpack(file_path)?;
@@ -48,11 +52,8 @@ impl Downloader {
     }
 
     async fn download_tar(&self, package: &NpmPackage) -> Result<PathBuf, JmError> {
-        let tarball_name = format!("{}@{}", package.name, package.version);
-
+        let tarball_name = format!("{}@{}", package.name.replace("/", "_"), package.version);
         let archive_path = self.cache_dir.join(tarball_name);
-
-        fs::create_dir_all(&archive_path.parent().unwrap())?;
 
         let response = self.client.get(&package.tarball_url).send().await?;
         let mut target = File::create(&archive_path)?;
