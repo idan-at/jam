@@ -152,6 +152,7 @@ async fn with_mono_repo_with_cyclic_dependencies() {
         let opts = Opts {
             registry: String::from(npm_mock_server.url()),
             command: Command::Install(Install {}),
+            debug: false,
         };
 
         let result = run(path.to_path_buf(), opts).await;
