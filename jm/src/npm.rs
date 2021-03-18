@@ -5,7 +5,7 @@ use reqwest::header;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use urlencoding::encode;
 
 const NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE: &'static str =
@@ -67,14 +67,10 @@ impl Fetcher {
         package_name: &str,
     ) -> Result<PackageMetadata, String> {
         match self.cache.get(package_name) {
-            Some(metadata) => {
-                debug!("Got {} metadata from cache", package_name);
-                Ok(metadata.clone())
-            }
+            Some(metadata) => Ok(metadata.clone()),
             None => {
                 let metadata = self.get_package_metadata_from_npm(package_name).await?;
 
-                debug!("Got {} metadata from remote", package_name);
                 self.cache
                     .insert(package_name.to_string(), metadata.clone());
                 Ok(metadata)
@@ -86,12 +82,14 @@ impl Fetcher {
         &self,
         package_name: &str,
     ) -> Result<PackageMetadata, String> {
+        let now = Instant::now();
         let url = format!("{}/{}", self.registry, encode(&package_name));
 
+        debug!("Getting {} metadata", package_name);
         let retry_policy = RetryPolicy::exponential(Duration::from_millis(
             FETCH_METADATA_EXPONENTIAL_BACK_OFF_MILLIS,
         ))
-        .with_max_retries(FETCH_METADATA_MAX_RETRIES)
+        .with_max_retries(1)
         .with_jitter(true);
         match retry_policy
             .retry(|| {
@@ -103,6 +101,12 @@ impl Fetcher {
             .await
         {
             Ok(response) if response.status().is_success() => {
+                debug!(
+                    "Got {} package metadata in {} milliseconds",
+                    package_name,
+                    now.elapsed().as_millis()
+                );
+
                 let npm_metadata: NpmPackageMetadata = response.json().await.expect(&format!(
                     "{}: Unexpected package metadata response",
                     package_name

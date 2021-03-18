@@ -24,6 +24,7 @@ async fn fails_on_missing_manifest_file() {
         let opts = Opts {
             registry: String::from("http://some/url"),
             command: Command::Install(Install {}),
+            debug: false,
         };
 
         let result = run(path.to_path_buf(), opts).await;
@@ -42,6 +43,7 @@ async fn with_empty_mono_repo() {
         let opts = Opts {
             registry: String::from("http://some/url"),
             command: Command::Install(Install {}),
+            debug: false,
         };
 
         let result = run(path.to_path_buf(), opts).await;
@@ -97,6 +99,7 @@ async fn with_simple_mono_repo() {
         let opts = Opts {
             registry: String::from(npm_mock_server.url()),
             command: Command::Install(Install {}),
+            debug: false,
         };
 
         let result = run(path.to_path_buf(), opts).await;

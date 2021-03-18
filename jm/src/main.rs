@@ -10,11 +10,11 @@ use jm::run;
 
 #[tokio::main]
 async fn main() {
-    let _ = env_logger::builder()
-        .filter_level(LevelFilter::Info)
-        .try_init();
     let cwd = current_dir().unwrap();
     let opts: Opts = Opts::parse();
+    let _ = env_logger::builder()
+        .filter_module("jm", get_log_level(opts.debug))
+        .try_init();
 
     debug!("Running command {} from {:?}", opts.command, cwd);
 
@@ -24,5 +24,13 @@ async fn main() {
             eprintln!("{}", err);
             process::exit(1);
         }
+    }
+}
+
+fn get_log_level(debug: bool) -> LevelFilter {
+    if debug {
+        LevelFilter::Debug
+    } else {
+        LevelFilter::Info
     }
 }
