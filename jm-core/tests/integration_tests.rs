@@ -39,8 +39,6 @@ impl MockResolver {
     }
 }
 
-// TODO: Test cyclic dependencies graph
-
 #[async_trait]
 impl PackageResolver for MockResolver {
     async fn get<'a>(
@@ -154,4 +152,61 @@ async fn returns_monorepo_graph() {
     assert_eq!(starting_nodes.len(), 2);
     assert_eq!(graph.edge_count(), 4);
     assert_eq!(graph.node_count(), 5);
+}
+
+#[tokio::test]
+async fn returns_monorepo_graph_when_it_has_cyclic_dependencies() {
+    let base = vec![Package::WorkspacePackage(WorkspacePackage::new(
+        "p1".to_string(),
+        "1.0.0".to_string(),
+        Some(hashmap! {
+          "dep1".to_string() => "1.0.0".to_string()
+        }),
+        None,
+        PathBuf::new(),
+    ))];
+    let mut resolver = MockResolver::new();
+
+    resolver.given(
+        Dependency {
+            name: "dep1".to_string(),
+            real_name: "dep1".to_string(),
+            version_or_dist_tag: "1.0.0".to_string(),
+        },
+        Package::Package(NpmPackage::new(
+            "dep1".to_string(),
+            "1.0.0".to_string(),
+            Some(hashmap! {
+                "dep2".to_string() => "1.0.0".to_string()
+            }),
+            String::from("shasum"),
+            String::from("tarball-url"),
+        )),
+    );
+    resolver.given(
+        Dependency {
+            name: "dep2".to_string(),
+            real_name: "dep2".to_string(),
+            version_or_dist_tag: "1.0.0".to_string(),
+        },
+        Package::Package(NpmPackage::new(
+            "dep2".to_string(),
+            "1.0.0".to_string(),
+            Some(hashmap! {
+              "dep1".to_string() => "1.0.0".to_string()
+            }),
+            String::from("shasum"),
+            String::from("tarball-url"),
+        )),
+    );
+
+    let result = build_graph(base, &resolver).await;
+
+    assert!(result.is_ok());
+
+    let (starting_nodes, graph) = result.unwrap();
+
+    assert_eq!(starting_nodes.len(), 1);
+    assert_eq!(graph.edge_count(), 3);
+    assert_eq!(graph.node_count(), 3);
 }

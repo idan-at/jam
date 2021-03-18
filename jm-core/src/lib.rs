@@ -49,6 +49,7 @@ pub async fn build_graph(
         .collect::<Result<Vec<(Package, &Dependency)>, JmError>>()?;
 
         let new_packages: Vec<(Package, &Dependency)> = dependencies_packages
+            .clone()
             .into_iter()
             .filter(|(package, _)| !seen.contains_key(package))
             .collect();
@@ -58,18 +59,20 @@ pub async fn build_graph(
             seen.insert(package.clone(), node);
         });
 
-        new_packages.iter().for_each(|(package, dependency)| {
-            let parent_nodes = dependencies_map
-                .get(dependency)
-                .unwrap()
-                .iter()
-                .map(|package| seen.get(package).unwrap());
-            let node = seen.get(package).unwrap();
+        dependencies_packages
+            .iter()
+            .for_each(|(package, dependency)| {
+                let parent_nodes = dependencies_map
+                    .get(dependency)
+                    .unwrap()
+                    .iter()
+                    .map(|package| seen.get(package).unwrap());
+                let node = seen.get(package).unwrap();
 
-            parent_nodes.for_each(|parent_node| {
-                graph.add_edge(*parent_node, *node, ());
-            })
-        });
+                parent_nodes.for_each(|parent_node| {
+                    graph.add_edge(*parent_node, *node, ());
+                })
+            });
 
         list = new_packages
             .iter()
