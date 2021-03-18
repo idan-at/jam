@@ -56,7 +56,7 @@ impl Resolver {
 
         let version_metadata = metadata.versions.get(&version.to_string()).unwrap();
 
-        Ok(Package::Package(NpmPackage::new(
+        Ok(Package::NpmPackage(NpmPackage::new(
             dependency.name.to_string(),
             version.to_string(),
             Some(version_metadata.dependencies.clone()),

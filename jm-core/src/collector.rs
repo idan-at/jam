@@ -51,7 +51,7 @@ mod tests {
         };
 
         let packages = vec![
-            Package::Package(NpmPackage {
+            Package::NpmPackage(NpmPackage {
                 name: "p1".to_string(),
                 version: "1.0.0".to_string(),
                 dependencies: vec![dep1.clone(), dep2.clone()],

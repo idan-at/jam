@@ -104,7 +104,7 @@ async fn returns_monorepo_graph() {
             real_name: "dep1".to_string(),
             version_or_dist_tag: "1.0.0".to_string(),
         },
-        Package::Package(NpmPackage::new(
+        Package::NpmPackage(NpmPackage::new(
             "dep1".to_string(),
             "1.0.0".to_string(),
             None,
@@ -118,7 +118,7 @@ async fn returns_monorepo_graph() {
             real_name: "dep2".to_string(),
             version_or_dist_tag: "1.0.0".to_string(),
         },
-        Package::Package(NpmPackage::new(
+        Package::NpmPackage(NpmPackage::new(
             "dep2".to_string(),
             "1.0.0".to_string(),
             Some(hashmap! {
@@ -134,7 +134,7 @@ async fn returns_monorepo_graph() {
             real_name: "dep3".to_string(),
             version_or_dist_tag: "~2.0.0".to_string(),
         },
-        Package::Package(NpmPackage::new(
+        Package::NpmPackage(NpmPackage::new(
             "dep3".to_string(),
             "2.0.5".to_string(),
             None,
@@ -173,7 +173,7 @@ async fn returns_monorepo_graph_when_it_has_cyclic_dependencies() {
             real_name: "dep1".to_string(),
             version_or_dist_tag: "1.0.0".to_string(),
         },
-        Package::Package(NpmPackage::new(
+        Package::NpmPackage(NpmPackage::new(
             "dep1".to_string(),
             "1.0.0".to_string(),
             Some(hashmap! {
@@ -189,7 +189,7 @@ async fn returns_monorepo_graph_when_it_has_cyclic_dependencies() {
             real_name: "dep2".to_string(),
             version_or_dist_tag: "1.0.0".to_string(),
         },
-        Package::Package(NpmPackage::new(
+        Package::NpmPackage(NpmPackage::new(
             "dep2".to_string(),
             "1.0.0".to_string(),
             Some(hashmap! {

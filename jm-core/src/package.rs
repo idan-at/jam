@@ -92,28 +92,28 @@ fn to_dependencies_list(dependencies: Option<HashMap<String, String>>) -> Vec<De
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Package {
-    Package(NpmPackage),
+    NpmPackage(NpmPackage),
     WorkspacePackage(WorkspacePackage),
 }
 
 impl Package {
     pub fn name(&self) -> &str {
         match self {
-            Package::Package(package) => &package.name,
+            Package::NpmPackage(package) => &package.name,
             Package::WorkspacePackage(workspace_package) => &workspace_package.name,
         }
     }
 
     pub fn version(&self) -> &str {
         match self {
-            Package::Package(package) => &package.version,
+            Package::NpmPackage(package) => &package.version,
             Package::WorkspacePackage(workspace_package) => &workspace_package.version,
         }
     }
 
     pub fn dependencies(&self) -> Vec<Dependency> {
         match self {
-            Package::Package(package) => package.dependencies(),
+            Package::NpmPackage(package) => package.dependencies(),
             Package::WorkspacePackage(workspace_package) => workspace_package.dependencies(),
         }
     }
@@ -126,7 +126,7 @@ mod tests {
 
     #[test]
     fn exposes_name_and_version_getters() {
-        let npm_package = Package::Package(NpmPackage::new(
+        let npm_package = Package::NpmPackage(NpmPackage::new(
             String::from("some-npm-package"),
             String::from("1.0.0"),
             None,
@@ -150,7 +150,7 @@ mod tests {
 
     #[test]
     fn npm_package_collects_all_packages_dependencies() {
-        let package = Package::Package(NpmPackage::new(
+        let package = Package::NpmPackage(NpmPackage::new(
             String::from("some-package"),
             String::from("1.0.0"),
             Some(hashmap! {
