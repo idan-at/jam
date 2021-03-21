@@ -39,6 +39,7 @@ impl<'a> TarDownloader<'a> {
         let tarball_name = format!("{}@{}", package.name.replace("/", "_"), package.version);
         let archive_path = self.cache_dir.join(tarball_name);
 
+        // TODO: add retries
         let response = self.client.get(&package.tarball_url).send().await?;
         let mut target = File::create(&archive_path)?;
         let content = response.bytes().await?;
