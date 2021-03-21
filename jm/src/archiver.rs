@@ -25,9 +25,16 @@ impl Archiver for DefaultArchiver {
         let tar_gz = File::open(archive_path)?;
         let tar = GzDecoder::new(tar_gz);
         let mut archive = Archive::new(tar);
+        println!("archive_path {:?}", archive_path);
+        println!("target_path {:?}", target_path);
 
         for mut entry in archive.entries()?.filter_map(|e| e.ok()) {
             let entry_path = entry.path()?;
+
+            if entry_path.to_str() == Some(NPM_PACK_PATH_PREFIX) {
+                continue;
+            }
+
             let file_inner_path = match entry_path.strip_prefix(NPM_PACK_PATH_PREFIX) {
                 Ok(stripped_path) => stripped_path.to_owned(),
                 Err(_) => entry_path.to_path_buf(),
@@ -87,12 +94,12 @@ mod tests {
     }
 
     #[test]
-    fn does_not_fail_on_archives_packed_with_root_permissions() {
+    fn does_not_fail_on_archives_packed_with_different_permissions() {
         let archiver = DefaultArchiver::new();
         let tmp_dir = TempDir::new("jm-archiver").unwrap();
 
         let fixtures_path = context();
-        let archive_path = fixtures_path.join("root_permissions.tgz");
+        let archive_path = fixtures_path.join("different_permissions.tgz");
 
         let expected_file_path = tmp_dir.path().join("package.json");
 

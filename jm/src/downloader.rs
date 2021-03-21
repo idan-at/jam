@@ -59,6 +59,7 @@ impl<'a> Downloader for TarDownloader<'a> {
     async fn download_to(&self, package: &NpmPackage, path: &Path) -> Result<(), JmError> {
         debug!("Downloading tar of {} to {:?}", package.name, path);
         let now = Instant::now();
+        // TODO: check if exists first
         let archive_path = self.download_tar(package).await?;
 
         info!("Extracting {} to {:?}", package.name, path);
