@@ -114,12 +114,9 @@ mod tests {
         let archiver = FailingArchiver {};
         let downloader = TarDownloader::new(&archiver);
 
-        let package = NpmPackage::new(
-            "p1".to_string(),
-            "1.0.0".to_string(),
-            None,
-            "shasum".to_string(),
-            format!("{}/tarball/{}", npm_mock_server.url(), "p1"),
+        npm_mock_server.with_tarball_data(
+            "p1",
+            hashmap! { "index.js".to_string() => "const x = 1".to_string() },
         );
 
         let result = downloader.download_to(&package, path.as_path()).await;
