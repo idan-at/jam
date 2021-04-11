@@ -3,7 +3,6 @@ use flate2::Compression;
 use httpmock::Method::GET;
 use httpmock::MockServer;
 use jm_npm_metadata::NpmPackageMetadata;
-use reqwest::blocking::Client;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
@@ -79,6 +78,7 @@ mod tests {
     use super::*;
     use jm_npm_metadata::{NpmDistMetadata, NpmVersionMetadata};
     use maplit::hashmap;
+    use reqwest::blocking::Client;
 
     #[test]
     fn metadata_works_for_package() {
