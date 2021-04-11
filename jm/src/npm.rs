@@ -3,35 +3,16 @@ use dashmap::DashMap;
 use log::debug;
 use reqwest::header;
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use urlencoding::encode;
+use jm_npm_metadata::NpmPackageMetadata;
 
 const NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE: &'static str =
     "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*";
 
 const FETCH_METADATA_EXPONENTIAL_BACK_OFF_MILLIS: u64 = 100;
 const FETCH_METADATA_MAX_RETRIES: usize = 3;
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct NpmDistMetadata {
-    pub shasum: String,
-    pub tarball: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct NpmVersionMetadata {
-    pub dist: NpmDistMetadata,
-    pub dependencies: Option<HashMap<String, String>>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct NpmPackageMetadata {
-    #[serde(alias = "dist-tags")]
-    pub dist_tags: Option<HashMap<String, String>>,
-    pub versions: HashMap<String, NpmVersionMetadata>,
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VersionMetadata {

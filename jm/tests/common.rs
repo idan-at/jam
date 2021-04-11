@@ -1,4 +1,4 @@
-use jm::npm::{NpmDistMetadata, NpmPackageMetadata, NpmVersionMetadata};
+use jm_npm_metadata::{NpmDistMetadata, NpmPackageMetadata, NpmVersionMetadata};
 use maplit::hashmap;
 use std::collections::HashMap;
 

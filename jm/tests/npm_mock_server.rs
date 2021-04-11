@@ -2,7 +2,7 @@ use flate2::write::GzEncoder;
 use flate2::Compression;
 use httpmock::Method::GET;
 use httpmock::MockServer;
-use jm::npm::NpmPackageMetadata;
+use jm_npm_metadata::NpmPackageMetadata;
 use reqwest::blocking::Client;
 use std::collections::HashMap;
 use std::env;
@@ -77,8 +77,7 @@ impl NpmMockServer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use jm::npm::NpmDistMetadata;
-    use jm::npm::NpmVersionMetadata;
+    use jm_npm_metadata::{NpmDistMetadata, NpmVersionMetadata};
     use maplit::hashmap;
 
     #[test]

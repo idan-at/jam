@@ -1101,6 +1101,7 @@ dependencies = [
  "globwalk",
  "httpmock",
  "jm-core",
+ "jm-npm-metadata",
  "jm-test-utils",
  "log",
  "maplit",
@@ -1128,6 +1129,13 @@ dependencies = [
  "reqwest",
  "semver",
  "tokio",
+]
+
+[[package]]
+name = "jm-npm-metadata"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
