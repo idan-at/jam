@@ -76,15 +76,24 @@ impl<'a> Downloader for TarDownloader<'a> {
     }
 }
 
-// TODO: Fake server to serve the tarballs.
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::sync::{Arc, Mutex};
     use tempdir::TempDir;
+    use maplit::hashmap;
+    use jm_test_utils::npm_mock_server::*;
+
+    fn setup() -> NpmMockServer {
+        let npm_mock_server = NpmMockServer::new();
+
+        npm_mock_server
+    }
 
     #[tokio::test]
     async fn fails_when_archiver_fails() {
+        let mut npm_mock_server = setup();
+
         struct FailingArchiver {}
 
         impl Archiver for FailingArchiver {
@@ -98,12 +107,20 @@ mod tests {
             "1.0.0".to_string(),
             None,
             "shasum".to_string(),
-            "tarball-url".to_string(),
+            format!("{}/tarball/{}", npm_mock_server.url(), "p1"),
         );
         let path = PathBuf::new();
 
         let archiver = FailingArchiver {};
         let downloader = TarDownloader::new(&archiver);
+
+        let package = NpmPackage::new(
+            "p1".to_string(),
+            "1.0.0".to_string(),
+            None,
+            "shasum".to_string(),
+            format!("{}/tarball/{}", npm_mock_server.url(), "p1"),
+        );
 
         let result = downloader.download_to(&package, path.as_path()).await;
 
@@ -112,6 +129,8 @@ mod tests {
 
     #[tokio::test]
     async fn calls_the_archiver_with_the_tar_path_and_target_path() {
+        let mut npm_mock_server = setup();
+
         struct MockArchiver {
             pub called_with: Arc<Mutex<Vec<PathBuf>>>,
         }
@@ -140,14 +159,14 @@ mod tests {
             "1.0.0".to_string(),
             None,
             "shasum".to_string(),
-            "tarball-url".to_string(),
+            format!("{}/tarball/{}", npm_mock_server.url(), "p1"),
         );
         let scoped_package = NpmPackage::new(
             "@scoped/p1".to_string(),
             "2.0.0".to_string(),
             None,
             "shasum".to_string(),
-            "tarball-url".to_string(),
+            format!("{}/tarball/{}", npm_mock_server.url(), "%40scoped%2Fp2"),
         );
         let tarballs_dir = ProjectDirs::from("com", "jm", "jm")
             .unwrap()
@@ -158,6 +177,15 @@ mod tests {
 
         let archiver = MockArchiver::new();
         let downloader = TarDownloader::new(&archiver);
+
+        npm_mock_server.with_tarball_data(
+            "p1",
+            hashmap! { "index.js".to_string() => "const x = 1".to_string() },
+        );
+        npm_mock_server.with_tarball_data(
+            "@scoped/p2",
+            hashmap! { "index.js".to_string() => "const x = 2".to_string() },
+        );
 
         downloader
             .download_to(&package, tmp_dir.path())
