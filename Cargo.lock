@@ -1100,6 +1100,7 @@ dependencies = [
  "futures",
  "globwalk",
  "httpmock",
+ "jm-cache",
  "jm-core",
  "jm-npm-metadata",
  "jm-test-utils",
@@ -1121,6 +1122,7 @@ name = "jm-cache"
 version = "0.1.0"
 dependencies = [
  "dashmap",
+ "directories",
 ]
 
 [[package]]

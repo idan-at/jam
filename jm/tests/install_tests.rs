@@ -2,8 +2,8 @@ mod common;
 
 use common::*;
 use jm::cli_opts::{Command, Install, Opts};
-use jm::run;
 use jm::errors::JmError;
+use jm::run;
 use jm_test_utils::async_helpers::*;
 use jm_test_utils::common::*;
 use jm_test_utils::npm_mock_server::*;

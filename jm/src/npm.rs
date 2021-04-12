@@ -7,6 +7,7 @@ use reqwest::Client;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use urlencoding::encode;
+// use jm_cache::Cache
 
 const NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE: &'static str =
     "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*";

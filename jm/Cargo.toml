@@ -26,6 +26,7 @@ tar = "0.4.33"
 flate2 = "1.0.14"
 directories = "3.0"
 jm-npm-metadata = { path = "../jm-npm-metadata" }
+jm-cache = { path = "../jm-cache" }
 
 [dev-dependencies]
 jm-test-utils = { path = "../jm-test-utils" }

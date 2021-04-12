@@ -1,6 +1,6 @@
 pub mod cli_opts;
-pub mod npm;
 pub mod errors;
+pub mod npm;
 
 mod archiver;
 mod commands;

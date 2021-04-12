@@ -1,4 +1,5 @@
 use std::fmt::{Display, Error, Formatter};
+use std::io;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct JmCacheError {
@@ -16,5 +17,11 @@ impl Display for JmCacheError {
         match *self {
             _ => write!(f, "{}", self.message),
         }
+    }
+}
+
+impl From<io::Error> for JmCacheError {
+    fn from(error: io::Error) -> Self {
+        JmCacheError::new(error.to_string())
     }
 }

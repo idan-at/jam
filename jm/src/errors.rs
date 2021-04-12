@@ -1,8 +1,8 @@
 use globwalk::GlobError;
+use jm_core::errors::JmCoreError;
 use reqwest;
 use std::fmt::{Display, Error, Formatter};
 use std::io;
-use jm_core::errors::JmCoreError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct JmError {
@@ -32,14 +32,12 @@ impl From<io::Error> for JmError {
 impl From<reqwest::Error> for JmError {
     fn from(error: reqwest::Error) -> Self {
         JmError::new(error.to_string())
-
     }
 }
 
 impl From<GlobError> for JmError {
     fn from(error: GlobError) -> Self {
         JmError::new(error.to_string())
-
     }
 }
 

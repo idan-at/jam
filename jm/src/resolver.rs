@@ -1,10 +1,10 @@
-use jm_core::errors::JmCoreError;
 use crate::npm::Fetcher;
 use crate::npm::PackageMetadata;
 use async_trait::async_trait;
 use dashmap::DashMap;
 use dashmap::DashSet;
 use jm_core::dependency::Dependency;
+use jm_core::errors::JmCoreError;
 use jm_core::package::NpmPackage;
 use jm_core::package::Package;
 use jm_core::resolver::PackageResolver;
