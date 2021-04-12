@@ -1,4 +1,5 @@
 use crate::archiver::Archiver;
+use crate::common::sanitize_package_name;
 use async_trait::async_trait;
 use directories::ProjectDirs;
 use jm_core::errors::JmError;
@@ -36,7 +37,11 @@ impl<'a> TarDownloader<'a> {
     async fn download_tar(&self, package: &NpmPackage) -> Result<PathBuf, JmError> {
         let now = Instant::now();
 
-        let tarball_name = format!("{}@{}", package.name.replace("/", "_"), package.version);
+        let tarball_name = format!(
+            "{}@{}",
+            sanitize_package_name(&package.name),
+            package.version
+        );
         let archive_path = self.cache_dir.join(tarball_name);
 
         // TODO: add retries
@@ -79,10 +84,10 @@ impl<'a> Downloader for TarDownloader<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use jm_test_utils::npm_mock_server::*;
+    use maplit::hashmap;
     use std::sync::{Arc, Mutex};
     use tempdir::TempDir;
-    use maplit::hashmap;
-    use jm_test_utils::npm_mock_server::*;
 
     fn setup() -> NpmMockServer {
         let npm_mock_server = NpmMockServer::new();

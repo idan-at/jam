@@ -1,12 +1,12 @@
 use again::RetryPolicy;
 use dashmap::DashMap;
+use jm_npm_metadata::NpmPackageMetadata;
 use log::debug;
 use reqwest::header;
 use reqwest::Client;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use urlencoding::encode;
-use jm_npm_metadata::NpmPackageMetadata;
 
 const NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE: &'static str =
     "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*";
@@ -43,6 +43,8 @@ impl Fetcher {
         }
     }
 
+    // TODO: Implement a generic Cache layer for this and the downloader.
+    // It should support in memory + FS (for the current run + previous runs.)
     pub async fn get_package_metadata(
         &self,
         package_name: &str,

@@ -1,3 +1,4 @@
+use crate::common::sanitize_package_name;
 use crate::downloader::Downloader;
 use jm_core::errors::JmError;
 use jm_core::package::NpmPackage;
@@ -50,7 +51,7 @@ impl<'a> Writer<'a> {
                 let path = self.package_path(npm_package);
                 debug!("Creating directory {:?}", &path);
 
-                fs::create_dir_all(&path)?;
+                fs::create_dir(&path)?;
                 self.downloader.download_to(&npm_package, &path).await?;
             }
             Package::WorkspacePackage(workspace_package) => {
@@ -62,7 +63,11 @@ impl<'a> Writer<'a> {
     }
 
     fn package_path(&self, package: &NpmPackage) -> PathBuf {
-        let package_dir_name = format!("{}@{}", package.name, package.version);
+        let package_dir_name = format!(
+            "{}@{}",
+            sanitize_package_name(&package.name),
+            package.version
+        );
 
         self.store_path.join(package_dir_name)
     }

@@ -7,3 +7,7 @@ pub fn read_manifest_file<'a>(manifest_file_path: PathBuf) -> Result<String, JmE
 
     Ok(content)
 }
+
+pub fn sanitize_package_name(package_name: &str) -> String {
+    package_name.replace("/", "_")
+}
