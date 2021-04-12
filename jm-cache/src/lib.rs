@@ -13,7 +13,7 @@ pub struct Cache {
 
 // TODO: Test
 impl Cache {
-    pub fn new(cache_name: String) -> Result<Cache, JmCacheError> {
+    pub fn new(cache_name: &str) -> Result<Cache, JmCacheError> {
         let cache: DashMap<String, String> = DashMap::new();
 
         match ProjectDirs::from("com", "jm", "jm") {

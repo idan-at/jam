@@ -1,5 +1,5 @@
 use again::RetryPolicy;
-use dashmap::DashMap;
+use serde::{Deserialize, Serialize};
 use jm_npm_metadata::NpmPackageMetadata;
 use log::debug;
 use reqwest::header;
@@ -7,7 +7,7 @@ use reqwest::Client;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use urlencoding::encode;
-// use jm_cache::Cache
+use jm_cache::Cache;
 
 const NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE: &'static str =
     "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*";
@@ -15,14 +15,14 @@ const NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE: &'static str =
 const FETCH_METADATA_EXPONENTIAL_BACK_OFF_MILLIS: u64 = 100;
 const FETCH_METADATA_MAX_RETRIES: usize = 3;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct VersionMetadata {
     pub shasum: String,
     pub tarball: String,
     pub dependencies: HashMap<String, String>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PackageMetadata {
     pub package_name: String,
     pub dist_tags: HashMap<String, String>,
@@ -30,7 +30,7 @@ pub struct PackageMetadata {
 }
 
 pub struct Fetcher {
-    cache: DashMap<String, PackageMetadata>,
+    cache: Cache,
     registry: String,
     client: Client,
 }
@@ -38,25 +38,24 @@ pub struct Fetcher {
 impl Fetcher {
     pub fn new(registry: String) -> Fetcher {
         Fetcher {
-            cache: DashMap::new(),
+            // TODO: Handle error
+            cache: Cache::new("metadata").unwrap(),
             registry,
             client: Client::new(),
         }
     }
 
-    // TODO: Implement a generic Cache layer for this and the downloader.
-    // It should support in memory + FS (for the current run + previous runs.)
     pub async fn get_package_metadata(
         &self,
         package_name: &str,
     ) -> Result<PackageMetadata, String> {
         match self.cache.get(package_name) {
-            Some(metadata) => Ok(metadata.clone()),
+            Some(metadata) => Ok(serde_json::from_str::<PackageMetadata>(&metadata).unwrap()),
             None => {
                 let metadata = self.get_package_metadata_from_npm(package_name).await?;
 
-                self.cache
-                    .insert(package_name.to_string(), metadata.clone());
+                self.cache.set(package_name, serde_json::to_string(&metadata).unwrap());
+
                 Ok(metadata)
             }
         }
