@@ -38,6 +38,7 @@ impl<'a> Writer<'a> {
             while let Some(nx) = dfs.next(graph) {
                 let package = &graph[nx];
 
+                // TODO: get node neighbors and create links (https://docs.rs/petgraph/0.5.1/petgraph/visit/trait.IntoNeighbors.html#tymethod.neighbors)
                 self.write_package(package).await?;
             }
         }
