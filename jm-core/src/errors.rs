@@ -1,21 +1,17 @@
-use globwalk::GlobError;
-use reqwest;
 use std::fmt::{Display, Error, Formatter};
-use std::io;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct JmError {
-    message: String,
+pub struct JmCoreError {
+    pub message: String,
 }
 
-// TODO: Rename to JmCoreError and create JmError in the main jm package
-impl JmError {
-    pub fn new(message: String) -> JmError {
-        JmError { message }
+impl JmCoreError {
+    pub fn new(message: String) -> JmCoreError {
+        JmCoreError { message }
     }
 }
 
-impl Display for JmError {
+impl Display for JmCoreError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match *self {
             _ => write!(f, "{}", self.message),
@@ -23,32 +19,8 @@ impl Display for JmError {
     }
 }
 
-impl From<io::Error> for JmError {
-    fn from(error: io::Error) -> Self {
-        JmError {
-            message: error.to_string(),
-        }
-    }
-}
-
-impl From<reqwest::Error> for JmError {
-    fn from(error: reqwest::Error) -> Self {
-        JmError {
-            message: error.to_string(),
-        }
-    }
-}
-
-impl From<GlobError> for JmError {
-    fn from(error: GlobError) -> Self {
-        JmError {
-            message: error.to_string(),
-        }
-    }
-}
-
-impl From<String> for JmError {
+impl From<String> for JmCoreError {
     fn from(error: String) -> Self {
-        JmError { message: error }
+        JmCoreError::new(error)
     }
 }

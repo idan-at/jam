@@ -1,4 +1,4 @@
-use jm_core::errors::JmError;
+use crate::errors::JmError;
 use serde::Deserialize;
 use std::path::PathBuf;
 

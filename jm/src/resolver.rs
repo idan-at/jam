@@ -1,10 +1,10 @@
+use jm_core::errors::JmCoreError;
 use crate::npm::Fetcher;
 use crate::npm::PackageMetadata;
 use async_trait::async_trait;
 use dashmap::DashMap;
 use dashmap::DashSet;
 use jm_core::dependency::Dependency;
-use jm_core::errors::JmError;
 use jm_core::package::NpmPackage;
 use jm_core::package::Package;
 use jm_core::resolver::PackageResolver;
@@ -35,7 +35,7 @@ impl Resolver {
         &self,
         requester: &str,
         dependency: &Dependency,
-    ) -> Result<Package, JmError> {
+    ) -> Result<Package, JmCoreError> {
         info!(
             "Fetching dependency {}@{}",
             dependency.real_name, dependency.version_or_dist_tag
@@ -69,7 +69,7 @@ impl Resolver {
         &self,
         package: &Package,
         dependency: &Dependency,
-    ) -> Result<bool, JmError> {
+    ) -> Result<bool, JmCoreError> {
         let metadata = self
             .fetcher
             .get_package_metadata(&dependency.real_name)
@@ -91,7 +91,7 @@ impl PackageResolver for Resolver {
         &self,
         requester: &str,
         dependency: &'a Dependency,
-    ) -> Result<(Package, &'a Dependency), JmError> {
+    ) -> Result<(Package, &'a Dependency), JmCoreError> {
         let package_name = &dependency.real_name;
 
         match self.cache.get(package_name) {
@@ -134,14 +134,14 @@ impl ResolverHelper {
         &self,
         dependency: &Dependency,
         package_metadata: &PackageMetadata,
-    ) -> Result<VersionReq, JmError> {
+    ) -> Result<VersionReq, JmCoreError> {
         match VersionReq::parse_compat(&dependency.version_or_dist_tag, Compat::Npm) {
             Ok(version) => Ok(version),
             Err(_) => {
                 let version = package_metadata
                     .dist_tags
                     .get(&dependency.version_or_dist_tag)
-                    .ok_or(JmError::new(format!(
+                    .ok_or(JmCoreError::new(format!(
                         "Failed to resolve dist tag {} of package {}",
                         &dependency.version_or_dist_tag, &dependency.real_name
                     )))?;
@@ -149,7 +149,7 @@ impl ResolverHelper {
                 if package_metadata.versions.contains_key(version) {
                     Ok(VersionReq::parse(version).unwrap())
                 } else {
-                    Err(JmError::new(format!(
+                    Err(JmCoreError::new(format!(
                         "{}@{} points to version {}, which does not exist",
                         &dependency.real_name, &dependency.version_or_dist_tag, &version
                     )))
@@ -167,7 +167,7 @@ impl ResolverHelper {
         parent: &str,
         requested_version: &VersionReq,
         package_metadata: &PackageMetadata,
-    ) -> Result<Version, JmError> {
+    ) -> Result<Version, JmCoreError> {
         let mut matching_versions: Vec<Version> = package_metadata
             .versions
             .keys()
@@ -176,7 +176,7 @@ impl ResolverHelper {
             .collect();
 
         if matching_versions.is_empty() {
-            return Err(JmError::new(format!(
+            return Err(JmCoreError::new(format!(
                 "No matching versions for {}->{} (requested {})",
                 parent, package_metadata.package_name, requested_version
             )));
@@ -258,7 +258,7 @@ mod tests {
 
         assert_eq!(
             result,
-            Err(JmError::new(format!(
+            Err(JmCoreError::new(format!(
                 "Failed to resolve dist tag {} of package {}",
                 dist_tag, package_name
             )))
@@ -296,7 +296,7 @@ mod tests {
 
         assert_eq!(
             result,
-            Err(JmError::new(format!(
+            Err(JmCoreError::new(format!(
                 "{}@{} points to version 1.0.0, which does not exist",
                 package_name, dist_tag
             )))
@@ -365,7 +365,7 @@ mod tests {
 
         assert_eq!(
             result,
-            Err(JmError::new(format!(
+            Err(JmCoreError::new(format!(
                 "No matching versions for {}->{} (requested {})",
                 parent, package_name, version_req
             )))

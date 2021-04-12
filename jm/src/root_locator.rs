@@ -1,4 +1,4 @@
-use jm_core::errors::JmError;
+use crate::errors::JmError;
 use std::path::PathBuf;
 
 const MANIFEST_FILE_NAME: &'static str = "jm.json";

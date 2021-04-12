@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use jm_core::build_graph;
 use jm_core::dependency::Dependency;
-use jm_core::errors::JmError;
+use jm_core::errors::JmCoreError;
 use jm_core::package::NpmPackage;
 use jm_core::package::Package;
 use jm_core::package::WorkspacePackage;
@@ -18,8 +18,8 @@ impl PackageResolver for FailingResolver {
         &self,
         _requester: &str,
         _dependency: &'a Dependency,
-    ) -> Result<(Package, &'a Dependency), JmError> {
-        Err(JmError::new(String::from("Failing resolver")))
+    ) -> Result<(Package, &'a Dependency), JmCoreError> {
+        Err(JmCoreError::new(String::from("Failing resolver")))
     }
 }
 
@@ -45,7 +45,7 @@ impl PackageResolver for MockResolver {
         &self,
         _requester: &str,
         dependency: &'a Dependency,
-    ) -> Result<(Package, &'a Dependency), JmError> {
+    ) -> Result<(Package, &'a Dependency), JmCoreError> {
         Ok((self.store.get(dependency).unwrap().clone(), dependency))
     }
 }
@@ -68,7 +68,7 @@ async fn fails_when_resolver_fails() {
     assert!(result.is_err());
 
     if let Err(err) = result {
-        assert_eq!(err, JmError::new(String::from("Failing resolver")))
+        assert_eq!(err, JmCoreError::new(String::from("Failing resolver")))
     }
 }
 

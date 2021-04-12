@@ -1,5 +1,6 @@
 pub mod cli_opts;
 pub mod npm;
+pub mod errors;
 
 mod archiver;
 mod commands;
@@ -12,7 +13,7 @@ mod workspace;
 mod writer;
 
 use crate::cli_opts::Opts;
-use jm_core::errors::JmError;
+use crate::errors::JmError;
 use log::debug;
 use std::path::PathBuf;
 

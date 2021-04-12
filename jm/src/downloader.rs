@@ -2,7 +2,7 @@ use crate::archiver::Archiver;
 use crate::common::sanitize_package_name;
 use async_trait::async_trait;
 use directories::ProjectDirs;
-use jm_core::errors::JmError;
+use crate::errors::JmError;
 use jm_core::package::NpmPackage;
 use log::{debug, info};
 use reqwest::Client;

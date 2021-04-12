@@ -1,5 +1,5 @@
 use flate2::read::GzDecoder;
-use jm_core::errors::JmError;
+use crate::errors::JmError;
 use std::fs;
 use std::fs::File;
 use std::path::Path;

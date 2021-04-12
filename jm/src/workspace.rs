@@ -1,6 +1,6 @@
 use crate::common::read_manifest_file;
 use crate::config::Config;
-use jm_core::errors::JmError;
+use crate::errors::JmError;
 use jm_core::package::{Package, WorkspacePackage};
 
 use globwalk::GlobWalkerBuilder;

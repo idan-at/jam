@@ -1,3 +1,4 @@
+use crate::JmError;
 use crate::archiver::DefaultArchiver;
 use crate::downloader::TarDownloader;
 use crate::npm::Fetcher;
@@ -6,7 +7,6 @@ use crate::Config;
 use crate::Workspace;
 use crate::Writer;
 use jm_core::build_graph;
-use jm_core::errors::JmError;
 
 pub async fn install(config: &Config) -> Result<(), JmError> {
     let workspace = Workspace::from_config(config)?;

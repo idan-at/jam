@@ -1117,16 +1117,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "jm-cache"
+version = "0.1.0"
+dependencies = [
+ "dashmap",
+]
+
+[[package]]
 name = "jm-core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "futures",
- "globwalk",
  "log",
  "maplit",
  "petgraph",
- "reqwest",
  "semver",
  "tokio",
 ]
