@@ -1,16 +1,16 @@
 use crate::JmError;
-use jm_common::sanitize_package_name;
-use jm_core::errors::JmCoreError;
-use std::fs::File;
 use again::RetryPolicy;
 use jm_cache::Cache;
-use std::io::BufReader;
+use jm_common::sanitize_package_name;
+use jm_core::errors::JmCoreError;
 use jm_npm_metadata::NpmPackageMetadata;
 use log::debug;
 use reqwest::header;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::BufReader;
 use std::time::{Duration, Instant};
 use urlencoding::encode;
 
@@ -64,7 +64,9 @@ impl Fetcher {
 
                 match serde_json::from_reader(reader) {
                     Ok(package_metadata) => Ok(package_metadata),
-                    Err(_) => Err(JmCoreError::new(String::from("Failed to read package metadata from cache")))
+                    Err(_) => Err(JmCoreError::new(String::from(
+                        "Failed to read package metadata from cache",
+                    ))),
                 }
             }
             None => {

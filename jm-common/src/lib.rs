@@ -10,6 +10,9 @@ mod tests {
     fn sanitized_package_names() {
         let package_name = "@scope/name";
 
-        assert_eq!(sanitize_package_name(package_name), String::from("@scope_name"));
+        assert_eq!(
+            sanitize_package_name(package_name),
+            String::from("@scope_name")
+        );
     }
 }

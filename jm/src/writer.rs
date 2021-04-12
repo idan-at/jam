@@ -1,6 +1,6 @@
-use jm_common::sanitize_package_name;
 use crate::downloader::Downloader;
 use crate::errors::JmError;
+use jm_common::sanitize_package_name;
 use jm_core::package::NpmPackage;
 use jm_core::package::Package;
 use log::debug;
@@ -50,9 +50,9 @@ impl<'a> Writer<'a> {
         match package {
             Package::NpmPackage(npm_package) => {
                 let path = self.package_path(npm_package);
-                debug!("Creating directory {:?}", &path);
 
                 if !path.exists() {
+                    debug!("Creating directory {:?}", &path);
                     fs::create_dir(&path)?;
                     self.downloader.download_to(&npm_package, &path).await?;
                 }

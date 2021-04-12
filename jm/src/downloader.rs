@@ -1,6 +1,4 @@
-use std::path::PathBuf;
 use crate::archiver::Archiver;
-use jm_common::sanitize_package_name;
 use crate::errors::JmError;
 use async_trait::async_trait;
 use jm_cache::Cache;
@@ -8,6 +6,7 @@ use jm_core::package::NpmPackage;
 use log::{debug, info};
 use reqwest::Client;
 use std::path::Path;
+use std::path::PathBuf;
 use std::time::Instant;
 
 #[async_trait]
@@ -38,7 +37,7 @@ impl<'a> TarDownloader<'a> {
         tarball_name: &str,
     ) -> Result<PathBuf, JmError> {
         let response = self.client.get(&package.tarball_url).send().await?;
-        let content = response.text().await?;
+        let content = response.bytes().await?;
 
         let archive_path = self.cache.set(tarball_name, content)?;
 
@@ -49,21 +48,19 @@ impl<'a> TarDownloader<'a> {
 #[async_trait]
 impl<'a> Downloader for TarDownloader<'a> {
     async fn download_to(&self, package: &NpmPackage, path: &Path) -> Result<(), JmError> {
-        let tarball_name = format!(
-            "{}@{}",
-            sanitize_package_name(&package.name),
-            package.version
-        );
+        let tarball_name = format!("{}@{}", package.name, package.version);
 
         let archive_path = match self.cache.get(&tarball_name) {
-            Some(file_path) => file_path,
+            Some(file_path) => {
+                debug!("tar of {} found in cache", package.name);
+                file_path
+            }
             None => {
-                debug!("Downloading tar of {}", package.name);
                 let now = Instant::now();
                 let archive_path = self.download_tar(package, &tarball_name).await?;
 
                 debug!(
-                    "Successfully Downloaded {} package tar in {} milliseconds",
+                    "Downloaded {} package tar in {} milliseconds",
                     package.name,
                     now.elapsed().as_millis()
                 );

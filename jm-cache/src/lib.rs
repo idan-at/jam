@@ -1,8 +1,8 @@
 pub mod errors;
 
-use jm_common::sanitize_package_name;
 use directories::ProjectDirs;
 use errors::JmCacheError;
+use jm_common::sanitize_package_name;
 use std::fs;
 use std::path::PathBuf;
 
@@ -25,8 +25,8 @@ impl Cache {
         }
     }
 
-    pub fn get(&self, package_name: &str) -> Option<PathBuf> {
-        let key_path = self.cache_dir.join(sanitize_package_name(package_name));
+    pub fn get(&self, key: &str) -> Option<PathBuf> {
+        let key_path = self.cache_dir.join(sanitize_package_name(key));
 
         if key_path.exists() {
             Some(key_path)
@@ -35,10 +35,10 @@ impl Cache {
         }
     }
 
-    pub fn set(&self, package_name: &str, value: String) -> Result<PathBuf, JmCacheError> {
-        let key_path = self.cache_dir.join(sanitize_package_name(package_name));
+    pub fn set<C: AsRef<[u8]>>(&self, key: &str, value: C) -> Result<PathBuf, JmCacheError> {
+        let key_path = self.cache_dir.join(sanitize_package_name(key));
 
-        fs::write(key_path.clone(), value)?;
+        fs::write(key_path.clone(), value.as_ref())?;
 
         Ok(key_path)
     }
