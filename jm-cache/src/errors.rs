@@ -3,7 +3,7 @@ use std::io;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct JmCacheError {
-    message: String,
+    pub message: String,
 }
 
 impl JmCacheError {

@@ -1,5 +1,8 @@
+use jm_core::errors::JmCoreError;
+use std::fs::File;
 use again::RetryPolicy;
 use jm_cache::Cache;
+use std::io::BufReader;
 use jm_npm_metadata::NpmPackageMetadata;
 use log::debug;
 use reqwest::header;
@@ -8,7 +11,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use urlencoding::encode;
-
 
 const NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE: &'static str =
     "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*";
@@ -49,17 +51,27 @@ impl Fetcher {
     pub async fn get_package_metadata(
         &self,
         package_name: &str,
-    ) -> Result<PackageMetadata, String> {
+    ) -> Result<PackageMetadata, JmCoreError> {
         match self.cache.get(package_name) {
-            Some((metadata, _)) => {
-                let metadata = String::from_utf8_lossy(&metadata);
-                Ok(serde_json::from_str::<PackageMetadata>(&metadata).unwrap())
-            },
+            Some(file_path) => {
+                let file = File::open(file_path)?;
+                let reader = BufReader::new(file);
+
+                match serde_json::from_reader(reader) {
+                    Ok(package_metadata) => Ok(package_metadata),
+                    Err(_) => Err(JmCoreError::new(String::from("Failed to read package metadata from cache")))
+                }
+            }
             None => {
                 let metadata = self.get_package_metadata_from_npm(package_name).await?;
 
-                self.cache
-                    .set(package_name, serde_json::to_string(&metadata).unwrap().as_bytes());
+                // TODO: consider adding a memory cache before the fs one.
+                #[allow(unused_must_use)] {
+                    self.cache.set(
+                        package_name,
+                        serde_json::to_string(&metadata).unwrap(),
+                    );
+                }
 
                 Ok(metadata)
             }

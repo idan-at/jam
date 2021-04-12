@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use crate::archiver::Archiver;
 use crate::common::sanitize_package_name;
 use crate::errors::JmError;
@@ -30,14 +31,17 @@ impl<'a> TarDownloader<'a> {
         }
     }
 
-    async fn download_tar(&self, package: &NpmPackage, tarball_name: &str) -> Result<(), JmError> {
+    async fn download_tar(
+        &self,
+        package: &NpmPackage,
+        tarball_name: &str,
+    ) -> Result<PathBuf, JmError> {
         let response = self.client.get(&package.tarball_url).send().await?;
-        let content = response.bytes().await?;
+        let content = response.text().await?;
 
-        // TODO: instead of relying on the cache to write it to disk, to it here instead
-        self.cache.set(tarball_name, &content);
+        let archive_path = self.cache.set(tarball_name, content)?;
 
-        Ok(())
+        Ok(archive_path)
     }
 }
 
@@ -50,17 +54,12 @@ impl<'a> Downloader for TarDownloader<'a> {
             package.version
         );
 
-        match self.cache.get(&tarball_name) {
-            Some((_, Some(archive_path))) => {
-                info!("Extracting {} to {:?}", package.name, path);
-                self.archiver.extract_to(&archive_path, path)?;
-
-                Ok(())
-            }
-            _ => {
+        let archive_path = match self.cache.get(&tarball_name) {
+            Some(file_path) => file_path,
+            None => {
                 debug!("Downloading tar of {}", package.name);
                 let now = Instant::now();
-                self.download_tar(package, &tarball_name).await?;
+                let archive_path = self.download_tar(package, &tarball_name).await?;
 
                 debug!(
                     "Successfully Downloaded {} package tar in {} milliseconds",
@@ -68,9 +67,14 @@ impl<'a> Downloader for TarDownloader<'a> {
                     now.elapsed().as_millis()
                 );
 
-                self.download_to(package, path).await
+                archive_path
             }
-        }
+        };
+
+        info!("Extracting {} to {:?}", package.name, path);
+        self.archiver.extract_to(&archive_path, path)?;
+
+        Ok(())
     }
 }
 

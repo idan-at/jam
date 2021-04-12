@@ -1,4 +1,5 @@
 use std::fmt::{Display, Error, Formatter};
+use std::io;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct JmCoreError {
@@ -22,5 +23,11 @@ impl Display for JmCoreError {
 impl From<String> for JmCoreError {
     fn from(error: String) -> Self {
         JmCoreError::new(error)
+    }
+}
+
+impl From<io::Error> for JmCoreError {
+    fn from(error: io::Error) -> Self {
+        JmCoreError::new(error.to_string())
     }
 }

@@ -1,4 +1,5 @@
 use globwalk::GlobError;
+use jm_cache::errors::JmCacheError;
 use jm_core::errors::JmCoreError;
 use reqwest;
 use std::fmt::{Display, Error, Formatter};
@@ -49,6 +50,12 @@ impl From<String> for JmError {
 
 impl From<JmCoreError> for JmError {
     fn from(error: JmCoreError) -> Self {
+        JmError::new(error.message)
+    }
+}
+
+impl From<JmCacheError> for JmError {
+    fn from(error: JmCacheError) -> Self {
         JmError::new(error.message)
     }
 }
