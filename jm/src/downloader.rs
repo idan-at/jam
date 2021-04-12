@@ -6,6 +6,7 @@ use jm_core::errors::JmError;
 use jm_core::package::NpmPackage;
 use log::{debug, info};
 use reqwest::Client;
+use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -26,10 +27,13 @@ pub struct TarDownloader<'a> {
 impl<'a> TarDownloader<'a> {
     pub fn new(archiver: &'a dyn Archiver) -> TarDownloader {
         let project_dirs = ProjectDirs::from("com", "jm", "jm").unwrap();
+        let cache_dir = project_dirs.cache_dir().to_path_buf();
+
+        fs::create_dir_all(&cache_dir).unwrap();
 
         TarDownloader {
             client: Client::new(),
-            cache_dir: project_dirs.cache_dir().to_path_buf(),
+            cache_dir,
             archiver,
         }
     }

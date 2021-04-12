@@ -55,7 +55,7 @@ mod tests {
     use std::path::PathBuf;
     use tempdir::TempDir;
 
-    fn context() -> PathBuf {
+    fn get_fixtures_path() -> PathBuf {
         env::current_dir().unwrap().join("tests").join("fixtures")
     }
 
@@ -64,7 +64,7 @@ mod tests {
         let archiver = DefaultArchiver::new();
         let tmp_dir = TempDir::new("jm-archiver").unwrap();
 
-        let fixtures_path = context();
+        let fixtures_path = get_fixtures_path();
         let archive_path = fixtures_path.join("simple.tgz");
 
         let expected_file_path = tmp_dir.path().join("package.json");
@@ -80,7 +80,7 @@ mod tests {
         let archiver = DefaultArchiver::new();
         let tmp_dir = TempDir::new("jm-archiver").unwrap();
 
-        let fixtures_path = context();
+        let fixtures_path = get_fixtures_path();
         let archive_path = fixtures_path.join("no_pack_prefix.tgz");
 
         let expected_file_path = tmp_dir.path().join("package.json");
@@ -96,7 +96,7 @@ mod tests {
         let archiver = DefaultArchiver::new();
         let tmp_dir = TempDir::new("jm-archiver").unwrap();
 
-        let fixtures_path = context();
+        let fixtures_path = get_fixtures_path();
         let archive_path = fixtures_path.join("different_permissions.tgz");
 
         let expected_file_path = tmp_dir.path().join("package.json");
@@ -105,5 +105,23 @@ mod tests {
 
         assert!(result.is_ok());
         assert!(expected_file_path.exists());
+    }
+
+    #[test]
+    fn overrides_existing_files() {
+        let archiver = DefaultArchiver::new();
+        let tmp_dir = TempDir::new("jm-archiver").unwrap();
+
+        let fixtures_path = get_fixtures_path();
+        let archive_path = fixtures_path.join("simple.tgz");
+
+        let expected_file_path = tmp_dir.path().join("package.json");
+        fs::write(&expected_file_path, "{}").unwrap();
+
+        let result = archiver.extract_to(&archive_path, tmp_dir.path());
+
+        assert!(result.is_ok());
+        assert!(expected_file_path.exists());
+        assert_ne!(fs::read_to_string(expected_file_path).unwrap(), "{}");
     }
 }

@@ -193,7 +193,7 @@ mod tests {
             .path()
             .join("node_modules")
             .join(".jm")
-            .join("@scope/p1@2.0.0")
+            .join("@scope_p1@2.0.0")
             .join("index.js");
 
         assert_eq!(result, Ok(()));
