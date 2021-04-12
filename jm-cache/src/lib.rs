@@ -11,8 +11,8 @@ pub struct Cache {
 }
 
 impl Cache {
-    pub fn new(cache_name: &str) -> Result<Cache, JmCacheError> {
-        match ProjectDirs::from("com", "jm", "jm") {
+    pub fn new(cache_group: String, cache_name: &str) -> Result<Cache, JmCacheError> {
+        match ProjectDirs::from("com", &cache_group, "jm") {
             Some(project_dirs) => {
                 let cache_dir = project_dirs.cache_dir().to_path_buf().join(cache_name);
 

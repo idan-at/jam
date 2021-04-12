@@ -21,8 +21,8 @@ pub struct TarDownloader<'a> {
 }
 
 impl<'a> TarDownloader<'a> {
-    pub fn new(archiver: &'a dyn Archiver) -> Result<TarDownloader, JmError> {
-        let cache = Cache::new("tarballs")?;
+    pub fn new(cache_group: String, archiver: &'a dyn Archiver) -> Result<TarDownloader, JmError> {
+        let cache = Cache::new(cache_group, "tarballs")?;
 
         Ok(TarDownloader {
             client: Client::new(),
@@ -113,7 +113,7 @@ mod tests {
         let path = PathBuf::new();
 
         let archiver = FailingArchiver {};
-        let downloader = TarDownloader::new(&archiver).unwrap();
+        let downloader = TarDownloader::new("tests".to_string(), &archiver).unwrap();
 
         npm_mock_server.with_tarball_data(
             "p1",
@@ -169,7 +169,7 @@ mod tests {
         let tmp_dir = TempDir::new("jm-downloader").unwrap();
 
         let archiver = MockArchiver::new();
-        let downloader = TarDownloader::new(&archiver).unwrap();
+        let downloader = TarDownloader::new("tests".to_string(), &archiver).unwrap();
 
         npm_mock_server.with_tarball_data(
             "p1",

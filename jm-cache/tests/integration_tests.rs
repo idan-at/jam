@@ -1,7 +1,7 @@
 use jm_cache::Cache;
 
 fn create_cache() -> Cache {
-    Cache::new("testing").unwrap()
+    Cache::new("tests".to_string(), "cache").unwrap()
 }
 
 #[test]

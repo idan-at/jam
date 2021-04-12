@@ -41,8 +41,8 @@ pub struct Fetcher {
 }
 
 impl Fetcher {
-    pub fn new(registry: String) -> Result<Fetcher, JmError> {
-        let cache = Cache::new("metadata")?;
+    pub fn new(cache_group: String, registry: String) -> Result<Fetcher, JmError> {
+        let cache = Cache::new(cache_group, "metadata")?;
 
         Ok(Fetcher {
             cache,

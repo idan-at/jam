@@ -12,6 +12,7 @@ pub struct Config {
     pub root_path: PathBuf,
     pub patterns: Vec<String>,
     pub registry: String,
+    pub cache_group: String,
 }
 
 impl Config {
@@ -21,7 +22,7 @@ impl Config {
         registry: &str,
     ) -> Result<Config, JmError> {
         match serde_json::from_str::<Manifest>(&manifest_file_content) {
-        Ok(manifest) => Ok(Config { root_path, patterns: manifest.workspaces, registry: String::from(registry) }),
+        Ok(manifest) => Ok(Config { cache_group: String::from("jm"), root_path, patterns: manifest.workspaces, registry: String::from(registry) }),
         Err(_) => Err(JmError::new(String::from(
           "Fail to parse manifest file, please make sure it is a valid JSON and 'workspaces' array exists",
         ) ))
@@ -56,6 +57,7 @@ mod tests {
         assert_eq!(
             result,
             Ok(Config {
+                cache_group: String::from("jm"),
                 root_path,
                 patterns: vec!["packages/**".to_string(), "not-in-packages/foo".to_string()],
                 registry

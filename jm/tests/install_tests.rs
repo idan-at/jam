@@ -20,6 +20,7 @@ fn setup() -> NpmMockServer {
 async fn fails_on_missing_manifest_file() {
     given_manifest_file_does_not_exist(|path| async move {
         let opts = Opts {
+            cache_group: String::from("tests"),
             registry: String::from("http://some/url"),
             command: Command::Install(Install {}),
             debug: false,
@@ -39,6 +40,7 @@ async fn fails_on_missing_manifest_file() {
 async fn with_empty_mono_repo() {
     given_valid_manifest_file(|path| async move {
         let opts = Opts {
+            cache_group: String::from("tests"),
             registry: String::from("http://some/url"),
             command: Command::Install(Install {}),
             debug: false,
@@ -95,6 +97,7 @@ async fn with_simple_mono_repo() {
 
     given_mono_repo_with(contents, |path| async move {
         let opts = Opts {
+            cache_group: String::from("tests"),
             registry: String::from(npm_mock_server.url()),
             command: Command::Install(Install {}),
             debug: false,
@@ -148,6 +151,7 @@ async fn with_mono_repo_with_cyclic_dependencies() {
 
     given_mono_repo_with(contents, |path| async move {
         let opts = Opts {
+            cache_group: String::from("tests"),
             registry: String::from(npm_mock_server.url()),
             command: Command::Install(Install {}),
             debug: false,
