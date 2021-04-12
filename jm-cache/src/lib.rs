@@ -43,7 +43,8 @@ impl Cache {
         let key_path = self.cache_dir.join(key);
 
         // Ignoring if write succeeded or not
-        #[allow(unused_must_use)] {
+        #[allow(unused_must_use)]
+        {
             fs::write(key_path, value.clone());
         }
         self.cache.insert(key.to_string(), value);
@@ -65,7 +66,7 @@ impl Cache {
     fn get_from_memory_cache(&self, key: &str) -> Option<CacheValue> {
         match self.cache.get(key) {
             Some(value) => Some((value.clone(), None)),
-            None => None
+            None => None,
         }
     }
 }

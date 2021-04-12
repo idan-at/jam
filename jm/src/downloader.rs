@@ -2,8 +2,8 @@ use crate::archiver::Archiver;
 use crate::common::sanitize_package_name;
 use crate::errors::JmError;
 use async_trait::async_trait;
-use jm_core::package::NpmPackage;
 use jm_cache::Cache;
+use jm_core::package::NpmPackage;
 use log::{debug, info};
 use reqwest::Client;
 use std::path::Path;
@@ -34,6 +34,7 @@ impl<'a> TarDownloader<'a> {
         let response = self.client.get(&package.tarball_url).send().await?;
         let content = response.text().await?;
 
+        // TODO: instead of relying on the cache to write it to disk, to it here instead
         self.cache.set(tarball_name, content);
 
         Ok(())
@@ -55,7 +56,7 @@ impl<'a> Downloader for TarDownloader<'a> {
                 self.archiver.extract_to(&archive_path, path)?;
 
                 Ok(())
-            },
+            }
             _ => {
                 debug!("Downloading tar of {}", package.name);
                 let now = Instant::now();
@@ -68,7 +69,7 @@ impl<'a> Downloader for TarDownloader<'a> {
                 );
 
                 self.download_to(package, path).await
-            },
+            }
         }
     }
 }
@@ -76,9 +77,9 @@ impl<'a> Downloader for TarDownloader<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
     use jm_test_utils::npm_mock_server::*;
     use maplit::hashmap;
+    use std::path::PathBuf;
     use std::sync::{Arc, Mutex};
     use tempdir::TempDir;
 

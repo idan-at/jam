@@ -1,13 +1,13 @@
 use again::RetryPolicy;
-use serde::{Deserialize, Serialize};
+use jm_cache::Cache;
 use jm_npm_metadata::NpmPackageMetadata;
 use log::debug;
 use reqwest::header;
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use urlencoding::encode;
-use jm_cache::Cache;
 
 const NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE: &'static str =
     "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*";
@@ -54,7 +54,8 @@ impl Fetcher {
             None => {
                 let metadata = self.get_package_metadata_from_npm(package_name).await?;
 
-                self.cache.set(package_name, serde_json::to_string(&metadata).unwrap());
+                self.cache
+                    .set(package_name, serde_json::to_string(&metadata).unwrap());
 
                 Ok(metadata)
             }
