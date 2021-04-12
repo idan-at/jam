@@ -50,7 +50,7 @@ impl Fetcher {
         package_name: &str,
     ) -> Result<PackageMetadata, String> {
         match self.cache.get(package_name) {
-            Some(metadata) => Ok(serde_json::from_str::<PackageMetadata>(&metadata).unwrap()),
+            Some((metadata, _)) => Ok(serde_json::from_str::<PackageMetadata>(&metadata).unwrap()),
             None => {
                 let metadata = self.get_package_metadata_from_npm(package_name).await?;
 

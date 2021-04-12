@@ -11,6 +11,8 @@ pub struct Cache {
     cache_dir: PathBuf,
 }
 
+pub type CacheValue = (String, Option<PathBuf>);
+
 // TODO: Test
 impl Cache {
     pub fn new(cache_name: &str) -> Result<Cache, JmCacheError> {
@@ -29,7 +31,7 @@ impl Cache {
         }
     }
 
-    pub fn get(&self, key: &str) -> Option<String> {
+    pub fn get(&self, key: &str) -> Option<CacheValue> {
         if let Some(value) = self.get_from_memory_cache(key) {
             Some(value)
         } else {
@@ -47,12 +49,12 @@ impl Cache {
         self.cache.insert(key.to_string(), value);
     }
 
-    fn get_from_file_system_cache(&self, key: &str) -> Option<String> {
+    fn get_from_file_system_cache(&self, key: &str) -> Option<CacheValue> {
         let key_path = self.cache_dir.join(key);
 
         if key_path.exists() {
-            match fs::read_to_string(key_path) {
-                Ok(value) => Some(value),
+            match fs::read_to_string(&key_path) {
+                Ok(value) => Some((value, Some(key_path))),
                 Err(_) => None,
             }
         } else {
@@ -60,9 +62,9 @@ impl Cache {
         }
     }
 
-    fn get_from_memory_cache(&self, key: &str) -> Option<String> {
+    fn get_from_memory_cache(&self, key: &str) -> Option<CacheValue> {
         match self.cache.get(key) {
-            Some(value) => Some(value.clone()),
+            Some(value) => Some((value.clone(), None)),
             None => None
         }
     }

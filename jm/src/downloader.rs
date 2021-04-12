@@ -2,15 +2,11 @@ use crate::archiver::Archiver;
 use crate::common::sanitize_package_name;
 use crate::errors::JmError;
 use async_trait::async_trait;
-use directories::ProjectDirs;
 use jm_core::package::NpmPackage;
+use jm_cache::Cache;
 use log::{debug, info};
 use reqwest::Client;
-use std::fs;
-use std::fs::File;
-use std::io::Write;
 use std::path::Path;
-use std::path::PathBuf;
 use std::time::Instant;
 
 #[async_trait]
@@ -20,74 +16,67 @@ pub trait Downloader {
 
 pub struct TarDownloader<'a> {
     client: Client,
-    cache_dir: PathBuf,
+    cache: Cache,
     archiver: &'a dyn Archiver,
 }
 
 impl<'a> TarDownloader<'a> {
     pub fn new(archiver: &'a dyn Archiver) -> TarDownloader {
-        let project_dirs = ProjectDirs::from("com", "jm", "jm").unwrap();
-        let cache_dir = project_dirs.cache_dir().to_path_buf();
-
-        fs::create_dir_all(&cache_dir).unwrap();
-
         TarDownloader {
             client: Client::new(),
-            cache_dir,
+            // TODO: handle errors
+            cache: Cache::new("tarballs").unwrap(),
             archiver,
         }
     }
 
-    async fn download_tar(&self, package: &NpmPackage) -> Result<PathBuf, JmError> {
-        let now = Instant::now();
-
-        let tarball_name = format!(
-            "{}@{}",
-            sanitize_package_name(&package.name),
-            package.version
-        );
-        let archive_path = self.cache_dir.join(tarball_name);
-
-        // TODO: add retries
+    async fn download_tar(&self, package: &NpmPackage, tarball_name: &str) -> Result<(), JmError> {
         let response = self.client.get(&package.tarball_url).send().await?;
-        let mut target = File::create(&archive_path)?;
-        let content = response.bytes().await?;
+        let content = response.text().await?;
 
-        target.write_all(content.as_ref())?;
-        debug!(
-            "Downloaded {} package tar in {} milliseconds",
-            package.name,
-            now.elapsed().as_millis()
-        );
+        self.cache.set(tarball_name, content);
 
-        Ok(archive_path)
+        Ok(())
     }
 }
 
 #[async_trait]
 impl<'a> Downloader for TarDownloader<'a> {
     async fn download_to(&self, package: &NpmPackage, path: &Path) -> Result<(), JmError> {
-        debug!("Downloading tar of {} to {:?}", package.name, path);
-        let now = Instant::now();
-        // TODO: check if exists first
-        let archive_path = self.download_tar(package).await?;
-
-        info!("Extracting {} to {:?}", package.name, path);
-        self.archiver.extract_to(&archive_path, path)?;
-
-        debug!(
-            "Successfully extracted {} package tar in {} milliseconds",
-            package.name,
-            now.elapsed().as_millis()
+        let tarball_name = format!(
+            "{}@{}",
+            sanitize_package_name(&package.name),
+            package.version
         );
 
-        Ok(())
+        match self.cache.get(&tarball_name) {
+            Some((_, Some(archive_path))) => {
+                info!("Extracting {} to {:?}", package.name, path);
+                self.archiver.extract_to(&archive_path, path)?;
+
+                Ok(())
+            },
+            _ => {
+                debug!("Downloading tar of {}", package.name);
+                let now = Instant::now();
+                self.download_tar(package, &tarball_name).await?;
+
+                debug!(
+                    "Successfully Downloaded {} package tar in {} milliseconds",
+                    package.name,
+                    now.elapsed().as_millis()
+                );
+
+                self.download_to(package, path).await
+            },
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
     use jm_test_utils::npm_mock_server::*;
     use maplit::hashmap;
     use std::sync::{Arc, Mutex};
@@ -150,10 +139,9 @@ mod tests {
         }
 
         impl Archiver for MockArchiver {
-            fn extract_to(&self, tarball_path: &Path, target_path: &Path) -> Result<(), JmError> {
+            fn extract_to(&self, _: &Path, target_path: &Path) -> Result<(), JmError> {
                 let mut lock = self.called_with.lock().unwrap();
 
-                (*lock).push(tarball_path.to_path_buf());
                 (*lock).push(target_path.to_path_buf());
 
                 Ok(())
@@ -174,10 +162,6 @@ mod tests {
             "shasum".to_string(),
             format!("{}/tarball/{}", npm_mock_server.url(), "%40scoped%2Fp2"),
         );
-        let tarballs_dir = ProjectDirs::from("com", "jm", "jm")
-            .unwrap()
-            .cache_dir()
-            .to_path_buf();
 
         let tmp_dir = TempDir::new("jm-downloader").unwrap();
 
@@ -194,19 +178,17 @@ mod tests {
         );
 
         downloader
-            .download_to(&package, tmp_dir.path())
+            .download_to(&package, tmp_dir.path().join("p1").as_path())
             .await
             .unwrap();
         downloader
-            .download_to(&scoped_package, tmp_dir.path())
+            .download_to(&scoped_package, tmp_dir.path().join("@scoped_p2").as_path())
             .await
             .unwrap();
 
         let expected_paths = vec![
-            tarballs_dir.join("p1@1.0.0"),
-            tmp_dir.path().to_path_buf(),
-            tarballs_dir.join("@scoped_p1@2.0.0"),
-            tmp_dir.path().to_path_buf(),
+            tmp_dir.path().to_path_buf().join("p1"),
+            tmp_dir.path().to_path_buf().join("@scoped_p2"),
         ];
 
         let called_with = archiver.called_with.lock().unwrap();

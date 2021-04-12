@@ -1094,7 +1094,6 @@ dependencies = [
  "async-trait",
  "clap",
  "dashmap",
- "directories",
  "env_logger",
  "flate2",
  "futures",
