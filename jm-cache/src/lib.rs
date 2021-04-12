@@ -10,7 +10,6 @@ pub struct Cache {
     cache_dir: PathBuf,
 }
 
-// TODO: unit tests
 impl Cache {
     pub fn new(cache_name: &str) -> Result<Cache, JmCacheError> {
         match ProjectDirs::from("com", "jm", "jm") {
