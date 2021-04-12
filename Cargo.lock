@@ -1100,6 +1100,7 @@ dependencies = [
  "globwalk",
  "httpmock",
  "jm-cache",
+ "jm-common",
  "jm-core",
  "jm-npm-metadata",
  "jm-test-utils",
@@ -1121,7 +1122,12 @@ name = "jm-cache"
 version = "0.1.0"
 dependencies = [
  "directories",
+ "jm-common",
 ]
+
+[[package]]
+name = "jm-common"
+version = "0.1.0"
 
 [[package]]
 name = "jm-core"

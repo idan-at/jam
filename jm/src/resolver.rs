@@ -22,6 +22,7 @@ pub struct Resolver {
 
 struct ResolverHelper {}
 
+// TODO: Move to core together with the fetcher
 impl Resolver {
     pub fn new(fetcher: Fetcher) -> Resolver {
         Resolver {

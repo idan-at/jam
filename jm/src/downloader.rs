@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use crate::archiver::Archiver;
-use crate::common::sanitize_package_name;
+use jm_common::sanitize_package_name;
 use crate::errors::JmError;
 use async_trait::async_trait;
 use jm_cache::Cache;

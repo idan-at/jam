@@ -1,5 +1,5 @@
 use crate::JmError;
-use crate::common::sanitize_package_name;
+use jm_common::sanitize_package_name;
 use jm_core::errors::JmCoreError;
 use std::fs::File;
 use again::RetryPolicy;

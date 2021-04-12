@@ -1,5 +1,6 @@
 pub mod errors;
 
+use jm_common::sanitize_package_name;
 use directories::ProjectDirs;
 use errors::JmCacheError;
 use std::fs;
@@ -25,8 +26,8 @@ impl Cache {
         }
     }
 
-    pub fn get(&self, key: &str) -> Option<PathBuf> {
-        let key_path = self.cache_dir.join(key);
+    pub fn get(&self, package_name: &str) -> Option<PathBuf> {
+        let key_path = self.cache_dir.join(sanitize_package_name(package_name));
 
         if key_path.exists() {
             Some(key_path)
@@ -35,8 +36,8 @@ impl Cache {
         }
     }
 
-    pub fn set(&self, key: &str, value: String) -> Result<PathBuf, JmCacheError> {
-        let key_path = self.cache_dir.join(key);
+    pub fn set(&self, package_name: &str, value: String) -> Result<PathBuf, JmCacheError> {
+        let key_path = self.cache_dir.join(sanitize_package_name(package_name));
 
         fs::write(key_path.clone(), value)?;
 

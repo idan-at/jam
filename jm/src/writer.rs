@@ -1,4 +1,4 @@
-use crate::common::sanitize_package_name;
+use jm_common::sanitize_package_name;
 use crate::downloader::Downloader;
 use crate::errors::JmError;
 use jm_core::package::NpmPackage;

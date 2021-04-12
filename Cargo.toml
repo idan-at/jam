@@ -5,5 +5,6 @@ members = [
   "jm-core",
   "jm-test-utils",
   "jm-npm-metadata",
-  "jm-cache"
+  "jm-cache",
+  "jm-common"
 ]
