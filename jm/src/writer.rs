@@ -139,7 +139,7 @@ mod tests {
         let tmp_dir = TempDir::new("jm-writer").unwrap();
 
         let archiver = DefaultArchiver::new();
-        let downloader = TarDownloader::new(&archiver);
+        let downloader = TarDownloader::new(&archiver).unwrap();
         let _ = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
 
         let expected_path = tmp_dir.path().join("node_modules").join(".jm");

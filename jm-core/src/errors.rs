@@ -1,3 +1,4 @@
+use jm_cache::errors::JmCacheError;
 use std::fmt::{Display, Error, Formatter};
 use std::io;
 
@@ -23,6 +24,12 @@ impl Display for JmCoreError {
 impl From<String> for JmCoreError {
     fn from(error: String) -> Self {
         JmCoreError::new(error)
+    }
+}
+
+impl From<JmCacheError> for JmCoreError {
+    fn from(error: JmCacheError) -> Self {
+        JmCoreError::new(error.message)
     }
 }
 

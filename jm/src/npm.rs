@@ -1,3 +1,5 @@
+use crate::JmError;
+use crate::common::sanitize_package_name;
 use jm_core::errors::JmCoreError;
 use std::fs::File;
 use again::RetryPolicy;
@@ -39,13 +41,14 @@ pub struct Fetcher {
 }
 
 impl Fetcher {
-    pub fn new(registry: String) -> Fetcher {
-        Fetcher {
-            // TODO: Handle error
-            cache: Cache::new("metadata").unwrap(),
+    pub fn new(registry: String) -> Result<Fetcher, JmError> {
+        let cache = Cache::new("metadata")?;
+
+        Ok(Fetcher {
+            cache,
             registry,
             client: Client::new(),
-        }
+        })
     }
 
     pub async fn get_package_metadata(
@@ -54,6 +57,8 @@ impl Fetcher {
     ) -> Result<PackageMetadata, JmCoreError> {
         match self.cache.get(package_name) {
             Some(file_path) => {
+                debug!("Got metadata for {} from cache", package_name);
+
                 let file = File::open(file_path)?;
                 let reader = BufReader::new(file);
 
@@ -66,12 +71,10 @@ impl Fetcher {
                 let metadata = self.get_package_metadata_from_npm(package_name).await?;
 
                 // TODO: consider adding a memory cache before the fs one.
-                #[allow(unused_must_use)] {
-                    self.cache.set(
-                        package_name,
-                        serde_json::to_string(&metadata).unwrap(),
-                    );
-                }
+                self.cache.set(
+                    &sanitize_package_name(package_name),
+                    serde_json::to_string(&metadata).unwrap(),
+                )?;
 
                 Ok(metadata)
             }

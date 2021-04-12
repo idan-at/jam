@@ -10,13 +10,13 @@ use jm_core::build_graph;
 
 pub async fn install(config: &Config) -> Result<(), JmError> {
     let workspace = Workspace::from_config(config)?;
-    let fetcher = Fetcher::new(config.registry.clone());
+    let fetcher = Fetcher::new(config.registry.clone())?;
     let resolver = Resolver::new(fetcher);
 
     let (starting_nodes, graph) = build_graph(workspace.packages(), &resolver).await?;
 
     let archiver = DefaultArchiver::new();
-    let downloader = TarDownloader::new(&archiver);
+    let downloader = TarDownloader::new(&archiver)?;
     let writer = Writer::new(config.root_path.as_path(), &downloader)?;
 
     writer.write(starting_nodes, &graph).await?;
