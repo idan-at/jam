@@ -32,10 +32,10 @@ impl<'a> TarDownloader<'a> {
 
     async fn download_tar(&self, package: &NpmPackage, tarball_name: &str) -> Result<(), JmError> {
         let response = self.client.get(&package.tarball_url).send().await?;
-        let content = response.text().await?;
+        let content = response.bytes().await?;
 
         // TODO: instead of relying on the cache to write it to disk, to it here instead
-        self.cache.set(tarball_name, content);
+        self.cache.set(tarball_name, &content);
 
         Ok(())
     }

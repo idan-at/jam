@@ -1120,7 +1120,6 @@ dependencies = [
 name = "jm-cache"
 version = "0.1.0"
 dependencies = [
- "dashmap",
  "directories",
 ]
 

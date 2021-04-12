@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use urlencoding::encode;
 
+
 const NPM_ABBREVIATED_METADATA_ACCEPT_HEADER_VALUE: &'static str =
     "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*";
 
@@ -50,12 +51,15 @@ impl Fetcher {
         package_name: &str,
     ) -> Result<PackageMetadata, String> {
         match self.cache.get(package_name) {
-            Some((metadata, _)) => Ok(serde_json::from_str::<PackageMetadata>(&metadata).unwrap()),
+            Some((metadata, _)) => {
+                let metadata = String::from_utf8_lossy(&metadata);
+                Ok(serde_json::from_str::<PackageMetadata>(&metadata).unwrap())
+            },
             None => {
                 let metadata = self.get_package_metadata_from_npm(package_name).await?;
 
                 self.cache
-                    .set(package_name, serde_json::to_string(&metadata).unwrap());
+                    .set(package_name, serde_json::to_string(&metadata).unwrap().as_bytes());
 
                 Ok(metadata)
             }
