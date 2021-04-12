@@ -51,8 +51,10 @@ impl<'a> Writer<'a> {
                 let path = self.package_path(npm_package);
                 debug!("Creating directory {:?}", &path);
 
-                fs::create_dir(&path)?;
-                self.downloader.download_to(&npm_package, &path).await?;
+                if !path.exists() {
+                    fs::create_dir(&path)?;
+                    self.downloader.download_to(&npm_package, &path).await?;
+                }
             }
             Package::WorkspacePackage(workspace_package) => {
                 debug!("Ignoring workspace package {:?}", workspace_package)
@@ -83,7 +85,7 @@ mod tests {
     use maplit::hashmap;
     use tempdir::TempDir;
 
-    fn create_graph() -> (NodeIndex, Graph<Package, ()>) {
+    fn create_graph() -> (Vec<NodeIndex>, Graph<Package, ()>) {
         let npm_package = Package::NpmPackage(NpmPackage::new(
             "p1".to_string(),
             "1.0.0".to_string(),
@@ -108,16 +110,27 @@ mod tests {
             None,
             PathBuf::new(),
         ));
+        let workspace_package2 = Package::WorkspacePackage(WorkspacePackage::new(
+            "workspace_package2".to_string(),
+            "1.0.0".to_string(),
+            Some(hashmap! {
+                "p1".to_string() => "1.0.0".to_string(),
+            }),
+            None,
+            PathBuf::new(),
+        ));
 
         let mut graph: Graph<Package, ()> = Graph::new();
         let npm_package_node = graph.add_node(npm_package);
         let scoped_npm_package_node = graph.add_node(scoped_npm_package);
         let workspace_package_node = graph.add_node(workspace_package);
+        let workspace_package2_node = graph.add_node(workspace_package2);
 
         graph.add_edge(workspace_package_node, npm_package_node, ());
         graph.add_edge(workspace_package_node, scoped_npm_package_node, ());
+        graph.add_edge(workspace_package2_node, npm_package_node, ());
 
-        (workspace_package_node, graph)
+        (vec![workspace_package_node, workspace_package2_node], graph)
     }
 
     #[test]
@@ -152,9 +165,9 @@ mod tests {
         let downloader = FailingDownloader {};
         let writer = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
 
-        let (starting_node, graph) = create_graph();
+        let (starting_nodes, graph) = create_graph();
 
-        let result = writer.write(vec![starting_node], &graph).await;
+        let result = writer.write(starting_nodes, &graph).await;
 
         assert_eq!(
             result,
@@ -179,9 +192,9 @@ mod tests {
         let downloader = DummyDownloader {};
         let writer = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
 
-        let (starting_node, graph) = create_graph();
+        let (starting_nodes, graph) = create_graph();
 
-        let result = writer.write(vec![starting_node], &graph).await;
+        let result = writer.write(starting_nodes, &graph).await;
 
         let expected_package_path = tmp_dir
             .path()

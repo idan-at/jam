@@ -8,6 +8,7 @@ pub struct JmError {
     message: String,
 }
 
+// TODO: Rename to JmCoreError and create JmError in the main jm package
 impl JmError {
     pub fn new(message: String) -> JmError {
         JmError { message }
