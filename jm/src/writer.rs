@@ -81,7 +81,8 @@ impl<'a> Writer<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use jm_cache::CacheFactory;
+use super::*;
     use crate::archiver::DefaultArchiver;
     use crate::downloader::TarDownloader;
     use async_trait::async_trait;
@@ -140,9 +141,10 @@ mod tests {
     #[test]
     fn new_creates_store_folder() {
         let tmp_dir = TempDir::new("jm-writer").unwrap();
+        let cache_factory = CacheFactory::new(tmp_dir.path().join("cache_factory"));
 
         let archiver = DefaultArchiver::new();
-        let downloader = TarDownloader::new("tests".to_string(), &archiver).unwrap();
+        let downloader = TarDownloader::new(&cache_factory, &archiver).unwrap();
         let _ = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
 
         let expected_path = tmp_dir.path().join(".jm").join("store");

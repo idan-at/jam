@@ -1,7 +1,7 @@
 use crate::archiver::Archiver;
 use crate::errors::JmError;
 use async_trait::async_trait;
-use jm_cache::Cache;
+use jm_cache::{CacheFactory, Cache};
 use jm_core::package::NpmPackage;
 use log::{debug, info};
 use reqwest::Client;
@@ -21,8 +21,8 @@ pub struct TarDownloader<'a> {
 }
 
 impl<'a> TarDownloader<'a> {
-    pub fn new(cache_group: String, archiver: &'a dyn Archiver) -> Result<TarDownloader, JmError> {
-        let cache = Cache::new(cache_group, "tarballs")?;
+    pub fn new(cache_factory: &CacheFactory, archiver: &'a dyn Archiver) -> Result<TarDownloader<'a>, JmError> {
+        let cache = cache_factory.create_cache("tarballs")?;
 
         Ok(TarDownloader {
             client: Client::new(),
@@ -85,15 +85,18 @@ mod tests {
     use std::sync::{Arc, Mutex};
     use tempdir::TempDir;
 
-    fn setup() -> NpmMockServer {
+    fn setup() -> (NpmMockServer, TempDir, CacheFactory) {
         let npm_mock_server = NpmMockServer::new();
+        let tmp_dir = TempDir::new("jm-downloader").unwrap();
 
-        npm_mock_server
+        let cache_factory = CacheFactory::new(tmp_dir.path().to_path_buf());
+
+        (npm_mock_server, tmp_dir, cache_factory)
     }
 
     #[tokio::test]
     async fn fails_when_archiver_fails() {
-        let mut npm_mock_server = setup();
+        let (mut npm_mock_server, _, cache_factory) = setup();
 
         struct FailingArchiver {}
 
@@ -113,7 +116,7 @@ mod tests {
         let path = PathBuf::new();
 
         let archiver = FailingArchiver {};
-        let downloader = TarDownloader::new("tests".to_string(), &archiver).unwrap();
+        let downloader = TarDownloader::new(&cache_factory, &archiver).unwrap();
 
         npm_mock_server.with_tarball_data(
             "p1",
@@ -127,7 +130,7 @@ mod tests {
 
     #[tokio::test]
     async fn calls_the_archiver_with_the_tar_path_and_target_path() {
-        let mut npm_mock_server = setup();
+        let (mut npm_mock_server, tmp_dir, cache_factory) = setup();
 
         struct MockArchiver {
             pub called_with: Arc<Mutex<Vec<PathBuf>>>,
@@ -166,10 +169,8 @@ mod tests {
             format!("{}/tarball/{}", npm_mock_server.url(), "%40scoped%2Fp2"),
         );
 
-        let tmp_dir = TempDir::new("jm-downloader").unwrap();
-
         let archiver = MockArchiver::new();
-        let downloader = TarDownloader::new("tests".to_string(), &archiver).unwrap();
+        let downloader = TarDownloader::new(&cache_factory, &archiver).unwrap();
 
         npm_mock_server.with_tarball_data(
             "p1",

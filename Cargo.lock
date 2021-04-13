@@ -1094,6 +1094,7 @@ dependencies = [
  "async-trait",
  "clap",
  "dashmap",
+ "directories",
  "env_logger",
  "flate2",
  "futures",
@@ -1121,8 +1122,8 @@ dependencies = [
 name = "jm-cache"
 version = "0.1.0"
 dependencies = [
- "directories",
  "jm-common",
+ "jm-test-utils",
 ]
 
 [[package]]

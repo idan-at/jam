@@ -1,5 +1,5 @@
 use again::RetryPolicy;
-use jm_cache::Cache;
+use jm_cache::{CacheFactory, Cache};
 use jm_common::sanitize_package_name;
 use crate::errors::JmCoreError;
 use jm_npm_metadata::NpmPackageMetadata;
@@ -40,8 +40,8 @@ pub struct Fetcher<'a> {
 }
 
 impl <'a> Fetcher<'a> {
-    pub fn new(cache_group: String, registry: &'a str) -> Result<Fetcher<'a>, JmCoreError> {
-        let cache = Cache::new(cache_group, "metadata")?;
+    pub fn new(cache_factory: &CacheFactory, registry: &'a str) -> Result<Fetcher<'a>, JmCoreError> {
+        let cache = cache_factory.create_cache("metadata")?;
 
         Ok(Fetcher {
             cache,

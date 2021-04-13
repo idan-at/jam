@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use crate::common::*;
 
-fn with_tmp_dir(func: impl FnOnce(PathBuf) -> ()) {
+pub fn with_tmp_dir(func: impl FnOnce(PathBuf) -> ()) {
     let tmp_dir = create_tmp_dir();
     let path = tmp_dir.path().to_path_buf();
 

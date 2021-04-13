@@ -5,5 +5,5 @@ authors = ["Idan Attias <idana@wix.com>"]
 edition = "2018"
 
 [dependencies]
-directories = "3.0"
 jm-common = { path = "../jm-common" }
+jm-test-utils = { path = "../jm-test-utils" }
