@@ -11,6 +11,13 @@ petgraph = "0.5.1"
 futures = "0.3.12"
 async-trait = "0.1.48"
 jm-cache = { path = "../jm-cache" }
+jm-npm-metadata = { path = "../jm-npm-metadata" }
+jm-common = { path = "../jm-common" }
+again = "0.1.2"
+reqwest = { version = "0.11.0", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+urlencoding = "1.1.1"
 
 [dev-dependencies]
 maplit = "1.0.2"

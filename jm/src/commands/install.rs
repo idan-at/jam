@@ -1,11 +1,11 @@
 use crate::archiver::DefaultArchiver;
 use crate::downloader::TarDownloader;
-use crate::npm::Fetcher;
 use crate::resolver::Resolver;
 use crate::Config;
 use crate::JmError;
 use crate::Workspace;
 use crate::Writer;
+use jm_core::npm::Fetcher;
 use jm_core::build_graph;
 
 pub async fn install(config: &Config) -> Result<(), JmError> {

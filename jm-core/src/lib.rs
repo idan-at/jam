@@ -1,5 +1,6 @@
 mod collector;
 
+pub mod npm;
 pub mod dependency;
 pub mod errors;
 pub mod package;

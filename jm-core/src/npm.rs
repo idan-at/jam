@@ -1,8 +1,7 @@
-use crate::JmError;
 use again::RetryPolicy;
 use jm_cache::Cache;
 use jm_common::sanitize_package_name;
-use jm_core::errors::JmCoreError;
+use crate::errors::JmCoreError;
 use jm_npm_metadata::NpmPackageMetadata;
 use log::debug;
 use reqwest::header;
@@ -41,7 +40,7 @@ pub struct Fetcher {
 }
 
 impl Fetcher {
-    pub fn new(cache_group: String, registry: String) -> Result<Fetcher, JmError> {
+    pub fn new(cache_group: String, registry: String) -> Result<Fetcher, JmCoreError> {
         let cache = Cache::new(cache_group, "metadata")?;
 
         Ok(Fetcher {

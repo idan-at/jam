@@ -1133,14 +1133,21 @@ version = "0.1.0"
 name = "jm-core"
 version = "0.1.0"
 dependencies = [
+ "again",
  "async-trait",
  "futures",
  "jm-cache",
+ "jm-common",
+ "jm-npm-metadata",
  "log",
  "maplit",
  "petgraph",
+ "reqwest",
  "semver",
+ "serde",
+ "serde_json",
  "tokio",
+ "urlencoding",
 ]
 
 [[package]]

@@ -1,5 +1,5 @@
-use crate::npm::Fetcher;
-use crate::npm::PackageMetadata;
+use jm_core::npm::Fetcher;
+use jm_core::npm::PackageMetadata;
 use async_trait::async_trait;
 use dashmap::DashMap;
 use dashmap::DashSet;
@@ -192,7 +192,7 @@ impl ResolverHelper {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::npm::VersionMetadata;
+    use jm_core::npm::VersionMetadata;
     use maplit::hashmap;
     use std::collections::HashMap;
 
