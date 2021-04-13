@@ -33,14 +33,14 @@ pub struct PackageMetadata {
     pub versions: HashMap<String, VersionMetadata>,
 }
 
-pub struct Fetcher {
+pub struct Fetcher<'a> {
     cache: Cache,
-    registry: String,
+    registry: &'a str,
     client: Client,
 }
 
-impl Fetcher {
-    pub fn new(cache_group: String, registry: String) -> Result<Fetcher, JmCoreError> {
+impl <'a> Fetcher<'a> {
+    pub fn new(cache_group: String, registry: &'a str) -> Result<Fetcher<'a>, JmCoreError> {
         let cache = Cache::new(cache_group, "metadata")?;
 
         Ok(Fetcher {

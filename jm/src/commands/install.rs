@@ -10,7 +10,7 @@ use jm_core::build_graph;
 
 pub async fn install(config: &Config) -> Result<(), JmError> {
     let workspace = Workspace::from_config(config)?;
-    let fetcher = Fetcher::new(config.cache_group.clone(), config.registry.clone())?;
+    let fetcher = Fetcher::new(config.cache_group.clone(), &config.registry)?;
     let resolver = Resolver::new(fetcher);
 
     let (starting_nodes, graph) = build_graph(workspace.packages(), &resolver).await?;

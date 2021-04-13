@@ -14,17 +14,17 @@ use std::iter::FromIterator;
 use std::ops::Deref;
 use std::str::FromStr;
 
-pub struct Resolver {
+pub struct Resolver<'a> {
     cache: DashMap<String, DashSet<Package>>,
-    fetcher: Fetcher,
+    fetcher: Fetcher<'a>,
     helper: ResolverHelper,
 }
 
 struct ResolverHelper {}
 
-// TODO: Move to core together with the fetcher
-impl Resolver {
-    pub fn new(fetcher: Fetcher) -> Resolver {
+// TODO: Move to core
+impl <'a> Resolver<'a> {
+    pub fn new(fetcher: Fetcher<'a>) -> Resolver<'a> {
         Resolver {
             cache: DashMap::new(),
             fetcher,
@@ -87,12 +87,12 @@ impl Resolver {
 }
 
 #[async_trait]
-impl PackageResolver for Resolver {
-    async fn get<'a>(
+impl <'a> PackageResolver for Resolver<'a> {
+    async fn get<'b>(
         &self,
         requester: &str,
-        dependency: &'a Dependency,
-    ) -> Result<(Package, &'a Dependency), JmCoreError> {
+        dependency: &'b Dependency,
+    ) -> Result<(Package, &'b Dependency), JmCoreError> {
         let package_name = &dependency.real_name;
 
         match self.cache.get(package_name) {
