@@ -74,7 +74,6 @@ impl<'a> Fetcher<'a> {
             None => {
                 let metadata = self.get_package_metadata_from_npm(package_name).await?;
 
-                // TODO: consider adding a memory cache before the fs one.
                 self.cache.set(
                     &sanitize_package_name(package_name),
                     serde_json::to_string(&metadata).unwrap().as_bytes(),
