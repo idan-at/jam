@@ -18,7 +18,7 @@ pub struct Writer<'a> {
 
 impl<'a> Writer<'a> {
     pub fn new(root_path: &Path, downloader: &'a dyn Downloader) -> Result<Writer<'a>, JmError> {
-        let store_path = root_path.join("node_modules").join(".jm");
+        let store_path = root_path.join(".jm").join("store");
 
         fs::create_dir_all(&store_path)?;
 
@@ -49,11 +49,11 @@ impl<'a> Writer<'a> {
     async fn write_package(&self, package: &Package) -> Result<(), JmError> {
         match package {
             Package::NpmPackage(npm_package) => {
-                let path = self.package_path(npm_package);
+                let path = self.package_store_path(npm_package);
 
                 if !path.exists() {
                     debug!("Creating directory {:?}", &path);
-                    fs::create_dir(&path)?;
+                    fs::create_dir_all(&path)?;
                     self.downloader.download_to(&npm_package, &path).await?;
                 }
             }
@@ -65,14 +65,24 @@ impl<'a> Writer<'a> {
         Ok(())
     }
 
-    fn package_path(&self, package: &NpmPackage) -> PathBuf {
+    fn package_store_path(&self, package: &NpmPackage) -> PathBuf {
         let package_dir_name = format!(
             "{}@{}",
             sanitize_package_name(&package.name),
             package.version
         );
 
-        self.store_path.join(package_dir_name)
+        println!(
+            "prod {:?}",
+            self.store_path
+                .join(&package_dir_name)
+                .join("node_modules")
+                .join(&package.name)
+        );
+        self.store_path
+            .join(package_dir_name)
+            .join("node_modules")
+            .join(&package.name)
     }
 }
 
@@ -142,7 +152,7 @@ mod tests {
         let downloader = TarDownloader::new("tests".to_string(), &archiver).unwrap();
         let _ = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
 
-        let expected_path = tmp_dir.path().join("node_modules").join(".jm");
+        let expected_path = tmp_dir.path().join(".jm").join("store");
 
         assert!(expected_path.exists());
     }
@@ -199,16 +209,24 @@ mod tests {
 
         let expected_package_path = tmp_dir
             .path()
-            .join("node_modules")
             .join(".jm")
+            .join("store")
             .join("p1@1.0.0")
+            .join("node_modules")
+            .join("p1")
             .join("index.js");
         let expected_scoped_package_path = tmp_dir
             .path()
-            .join("node_modules")
             .join(".jm")
+            .join("store")
             .join("@scope_p1@2.0.0")
+            .join("node_modules")
+            .join("@scope")
+            .join("p1")
             .join("index.js");
+
+        println!("test {:?}", &expected_package_path);
+        println!("test {:?}", &expected_scoped_package_path);
 
         assert_eq!(result, Ok(()));
         assert!(expected_package_path.exists());
