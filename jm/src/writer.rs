@@ -72,13 +72,6 @@ impl<'a> Writer<'a> {
             package.version
         );
 
-        println!(
-            "prod {:?}",
-            self.store_path
-                .join(&package_dir_name)
-                .join("node_modules")
-                .join(&package.name)
-        );
         self.store_path
             .join(package_dir_name)
             .join("node_modules")
@@ -224,9 +217,6 @@ mod tests {
             .join("@scope")
             .join("p1")
             .join("index.js");
-
-        println!("test {:?}", &expected_package_path);
-        println!("test {:?}", &expected_scoped_package_path);
 
         assert_eq!(result, Ok(()));
         assert!(expected_package_path.exists());
