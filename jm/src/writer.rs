@@ -18,8 +18,8 @@ pub struct Writer<'a> {
 }
 
 impl<'a> Writer<'a> {
-    pub fn new(root_path: &Path, downloader: &'a dyn Downloader) -> Result<Writer<'a>, JmError> {
-        let store_path = root_path.join(".jm").join("store");
+    pub fn new(data_dir: &Path, downloader: &'a dyn Downloader) -> Result<Writer<'a>, JmError> {
+        let store_path = data_dir.join("store");
 
         fs::create_dir_all(&store_path)?;
 
@@ -102,6 +102,8 @@ impl<'a> Writer<'a> {
                 let link = package_root_path
                     .join("node_modules")
                     .join(&npm_package.name);
+
+                println!("parent exists {}", link.parent().unwrap().exists());
 
                 if let Err(err) = symlink(&original, &link) {
                     if err.kind() != ErrorKind::AlreadyExists {
@@ -191,7 +193,7 @@ mod tests {
         let downloader = TarDownloader::new(&cache_factory, &archiver).unwrap();
         let _ = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
 
-        let expected_path = tmp_dir.path().join(".jm").join("store");
+        let expected_path = tmp_dir.path().join("store");
 
         assert!(expected_path.exists());
     }
@@ -248,7 +250,6 @@ mod tests {
 
         let expected_package_path = tmp_dir
             .path()
-            .join(".jm")
             .join("store")
             .join("p1@1.0.0")
             .join("node_modules")
@@ -256,7 +257,6 @@ mod tests {
             .join("index.js");
         let expected_scoped_package_path = tmp_dir
             .path()
-            .join(".jm")
             .join("store")
             .join("@scope_p1@2.0.0")
             .join("node_modules")
@@ -264,6 +264,7 @@ mod tests {
             .join("p1")
             .join("index.js");
 
+        // TODO: test created links
         assert_eq!(result, Ok(()));
         assert!(expected_package_path.exists());
         assert!(expected_scoped_package_path.exists());

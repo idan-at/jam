@@ -22,7 +22,7 @@ pub async fn install(config: &Config) -> Result<(), JmError> {
 
     let archiver = DefaultArchiver::new();
     let downloader = TarDownloader::new(&cache_factory, &archiver)?;
-    let writer = Writer::new(config.root_path.as_path(), &downloader)?;
+    let writer = Writer::new(project_dirs.data_dir(), &downloader)?;
 
     writer.write(starting_nodes, &graph).await?;
 
