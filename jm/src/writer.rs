@@ -103,8 +103,7 @@ impl<'a> Writer<'a> {
                     .join("node_modules")
                     .join(&npm_package.name);
 
-                println!("parent exists {}", link.parent().unwrap().exists());
-
+                fs::create_dir_all(link.parent().unwrap())?;
                 if let Err(err) = symlink(&original, &link) {
                     if err.kind() != ErrorKind::AlreadyExists {
                         return Err(JmError::new(format!(
@@ -147,7 +146,9 @@ mod tests {
         let scoped_npm_package = Package::NpmPackage(NpmPackage::new(
             "@scope/p1".to_string(),
             "2.0.0".to_string(),
-            None,
+            Some(hashmap! {
+                "p1".to_string() => "1.0.0".to_string(),
+            }),
             "shasum".to_string(),
             "tarball-url".to_string(),
         ));
@@ -179,6 +180,7 @@ mod tests {
 
         graph.add_edge(workspace_package_node, npm_package_node, ());
         graph.add_edge(workspace_package_node, scoped_npm_package_node, ());
+        graph.add_edge(scoped_npm_package_node, npm_package_node, ());
         graph.add_edge(workspace_package2_node, npm_package_node, ());
 
         (vec![workspace_package_node, workspace_package2_node], graph)
@@ -264,9 +266,22 @@ mod tests {
             .join("p1")
             .join("index.js");
 
-        // TODO: test created links
+        let expected_scoped_package_to_package_link_path = fs::read_link(
+            tmp_dir
+                .path()
+                .join("store")
+                .join("@scope_p1@2.0.0")
+                .join("node_modules")
+                .join("p1"),
+        )
+        .unwrap();
+
         assert_eq!(result, Ok(()));
         assert!(expected_package_path.exists());
+        assert_eq!(
+            expected_scoped_package_to_package_link_path,
+            expected_package_path.parent().unwrap()
+        );
         assert!(expected_scoped_package_path.exists());
     }
 }
