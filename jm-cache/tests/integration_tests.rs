@@ -15,7 +15,7 @@ fn test_cache_miss() {
 fn test_cache_hit() {
     let cache = create_cache();
 
-    cache.set("package", "something".to_string()).unwrap();
+    cache.set("package", "something".as_bytes()).unwrap();
 
     assert_ne!(cache.get("package"), None);
 }
@@ -24,7 +24,7 @@ fn test_cache_hit() {
 fn test_cache_key_sanitization() {
     let cache = create_cache();
 
-    cache.set("@scope/a", "something".to_string()).unwrap();
+    cache.set("@scope/a", "something".as_bytes()).unwrap();
 
     let path = cache.get("@scope/a").unwrap();
 

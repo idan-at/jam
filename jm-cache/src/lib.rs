@@ -5,7 +5,7 @@ use errors::JmCacheError;
 use jm_common::sanitize_package_name;
 use std::fs;
 use std::fs::File;
-use std::io::copy;
+use std::io::prelude::*;
 use std::path::PathBuf;
 
 pub struct Cache {
@@ -37,13 +37,11 @@ impl Cache {
         }
     }
 
-    pub fn set(&self, key: &str, value: String) -> Result<PathBuf, JmCacheError> {
+    pub fn set(&self, key: &str, value: &[u8]) -> Result<PathBuf, JmCacheError> {
         let key_path = self.cache_dir.join(sanitize_package_name(key));
         let mut file = File::create(&key_path)?;
 
-        copy(&mut value.as_bytes(), &mut file)?;
-
-        // fs::write(key_path.clone(), value.as_ref())?;
+        file.write_all(value)?;
 
         Ok(key_path)
     }
