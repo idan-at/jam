@@ -97,27 +97,24 @@ impl<'a> Writer<'a> {
     }
 
     fn create_link(&self, package_root_path: &Path, to_package: &Package) -> Result<(), JmError> {
-        match to_package {
-            Package::NpmPackage(npm_package) => {
-                let original = self.package_code_path(&npm_package);
-                let link = package_root_path
-                    .join("node_modules")
-                    .join(&npm_package.name);
+        let original = match to_package {
+            Package::NpmPackage(npm_package) => self.package_code_path(&npm_package),
+            Package::WorkspacePackage(workspace_package) => workspace_package.base_path.clone(),
+        };
 
-                fs::create_dir_all(link.parent().unwrap())?;
-                if let Err(err) = symlink(&original, &link) {
-                    if err.kind() != ErrorKind::AlreadyExists {
-                        return Err(JmError::new(format!(
-                            "Failed to link package {:?}->{:?} {}",
-                            link,
-                            original,
-                            err.to_string()
-                        )));
-                    }
-                }
-            }
-            Package::WorkspacePackage(workspace_package) => {
-                debug!("Not linking workspace package {:?}", workspace_package)
+        let link = package_root_path
+            .join("node_modules")
+            .join(&to_package.name());
+
+        fs::create_dir_all(link.parent().unwrap())?;
+        if let Err(err) = symlink(&original, &link) {
+            if err.kind() != ErrorKind::AlreadyExists {
+                return Err(JmError::new(format!(
+                    "Failed to link package {:?}->{:?} {}",
+                    link,
+                    original,
+                    err.to_string()
+                )));
             }
         }
 
@@ -136,7 +133,12 @@ mod tests {
     use maplit::hashmap;
     use tempdir::TempDir;
 
-    fn create_context() -> (Vec<NodeIndex>, Vec<WorkspacePackage>, Graph<Package, ()>, TempDir) {
+    fn create_context() -> (
+        Vec<NodeIndex>,
+        Vec<WorkspacePackage>,
+        Graph<Package, ()>,
+        TempDir,
+    ) {
         let tmp_dir = TempDir::new("jm-writer").unwrap();
 
         let npm_package = Package::NpmPackage(NpmPackage::new(
@@ -190,7 +192,12 @@ mod tests {
         graph.add_edge(workspace_package2_node, npm_package_node, ());
         graph.add_edge(workspace_package2_node, workspace_package_node, ());
 
-        (vec![workspace_package_node, workspace_package2_node], vec![workspace_package_inner, workspace_package2_inner], graph, tmp_dir)
+        (
+            vec![workspace_package_node, workspace_package2_node],
+            vec![workspace_package_inner, workspace_package2_inner],
+            graph,
+            tmp_dir,
+        )
     }
 
     #[test]
@@ -280,24 +287,39 @@ mod tests {
         .unwrap();
 
         let expected_workspace_package_to_package_link_path = fs::read_link(
-            workspace_packages[0].base_path.clone()
+            workspace_packages[0]
+                .base_path
+                .clone()
                 .join("node_modules")
-                .join("p1")
+                .join("p1"),
         )
         .unwrap();
         let expected_workspace_package_to_scoped_package_link_path = fs::read_link(
-            workspace_packages[0].base_path.clone()
+            workspace_packages[0]
+                .base_path
+                .clone()
                 .join("node_modules")
                 .join("@scope")
-                .join("p1")
+                .join("p1"),
         )
         .unwrap();
 
         let expected_workspace_package2_to_package_link_path = fs::read_link(
-            workspace_packages[1].base_path.clone()
+            workspace_packages[1]
+                .base_path
+                .clone()
                 .join("node_modules")
-                .join("p1")
-        ).unwrap();
+                .join("p1"),
+        )
+        .unwrap();
+        let expected_workspace_package2_to_workspace_package_link_path = fs::read_link(
+            workspace_packages[1]
+                .base_path
+                .clone()
+                .join("node_modules")
+                .join("workspace_package"),
+        )
+        .unwrap();
 
         assert_eq!(result, Ok(()));
 
@@ -321,6 +343,10 @@ mod tests {
         assert_eq!(
             expected_workspace_package2_to_package_link_path,
             expected_package_path.parent().unwrap()
+        );
+        assert_eq!(
+            expected_workspace_package2_to_workspace_package_link_path,
+            workspace_packages[0].base_path
         );
     }
 }
