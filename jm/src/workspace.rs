@@ -55,7 +55,7 @@ impl Workspace {
                 )),
                 Err(_) => {
                     return Err(JmError::new(format!(
-                        "Fail to parse {:?}",
+                        "Failed to parse {:?}",
                         manifest_file_path,
                     )))
                 }
@@ -106,7 +106,7 @@ mod tests {
             assert_eq!(
                 result,
                 Err(JmError::new(format!(
-                    "Fail to parse {:?}",
+                    "Failed to parse {:?}",
                     path.join("packages").join("p1").join("package.json"),
                 )))
             )

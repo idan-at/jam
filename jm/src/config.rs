@@ -24,7 +24,7 @@ impl Config {
         match serde_json::from_str::<Manifest>(&manifest_file_content) {
         Ok(manifest) => Ok(Config { cache_group: String::from("jm"), root_path, patterns: manifest.workspaces, registry: String::from(registry) }),
         Err(_) => Err(JmError::new(String::from(
-          "Fail to parse manifest file, please make sure it is a valid JSON and 'workspaces' array exists",
+          "Failed to parse manifest file, please make sure it is a valid JSON and 'workspaces' array exists",
         ) ))
       }
     }
@@ -43,7 +43,7 @@ mod tests {
 
         let result = Config::new(root_path, content, registry);
 
-        assert_eq!(result, Err(JmError::new(String::from("Fail to parse manifest file, please make sure it is a valid JSON and 'workspaces' array exists".to_string() ))));
+        assert_eq!(result, Err(JmError::new(String::from("Failed to parse manifest file, please make sure it is a valid JSON and 'workspaces' array exists".to_string() ))));
     }
 
     #[test]

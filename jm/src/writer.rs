@@ -6,9 +6,10 @@ use jm_core::package::Package;
 use log::debug;
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::visit::Dfs;
-use std::path::Path;
-
 use std::fs;
+use std::io::ErrorKind;
+use std::os::unix::fs::symlink;
+use std::path::Path;
 use std::path::PathBuf;
 
 pub struct Writer<'a> {
@@ -37,45 +38,88 @@ impl<'a> Writer<'a> {
             let mut dfs = Dfs::new(graph, node);
             while let Some(nx) = dfs.next(graph) {
                 let package = &graph[nx];
-
-                // TODO: get node neighbors and create links (https://docs.rs/petgraph/0.5.1/petgraph/visit/trait.IntoNeighbors.html#tymethod.neighbors)
-                self.write_package(package).await?;
+                let neighbors: Vec<&Package> = graph.neighbors(nx).map(|n| &graph[n]).collect();
+                self.write_package(package, neighbors).await?;
             }
         }
 
         Ok(())
     }
 
-    async fn write_package(&self, package: &Package) -> Result<(), JmError> {
+    async fn write_package(
+        &self,
+        package: &Package,
+        neighbors: Vec<&Package>,
+    ) -> Result<(), JmError> {
         match package {
             Package::NpmPackage(npm_package) => {
-                let path = self.package_store_path(npm_package);
+                let path = self.package_store_root_path(npm_package);
+                let package_files_path = self.package_code_path(npm_package);
 
-                if !path.exists() {
-                    debug!("Creating directory {:?}", &path);
-                    fs::create_dir_all(&path)?;
-                    self.downloader.download_to(&npm_package, &path).await?;
+                if !package_files_path.exists() {
+                    debug!("Downloading {} to directory {:?}", &npm_package.name, &path);
+
+                    fs::create_dir_all(&package_files_path)?;
+                    self.downloader
+                        .download_to(&npm_package, &package_files_path)
+                        .await?;
+
+                    for neighbor in neighbors {
+                        self.create_link(path.clone(), neighbor)?;
+                    }
                 }
             }
             Package::WorkspacePackage(workspace_package) => {
-                debug!("Ignoring workspace package {:?}", workspace_package)
+                debug!("Ignoring workspace package {:?}", workspace_package);
+
+                fs::create_dir_all(&workspace_package.base_path.join("node_modules"))?;
             }
         }
 
         Ok(())
     }
 
-    fn package_store_path(&self, package: &NpmPackage) -> PathBuf {
+    fn package_store_root_path(&self, package: &NpmPackage) -> PathBuf {
         let package_dir_name = format!(
             "{}@{}",
             sanitize_package_name(&package.name),
             package.version
         );
 
-        self.store_path
-            .join(package_dir_name)
+        self.store_path.join(package_dir_name)
+    }
+
+    fn package_code_path(&self, package: &NpmPackage) -> PathBuf {
+        self.package_store_root_path(package)
             .join("node_modules")
             .join(&package.name)
+    }
+
+    fn create_link(&self, package_root_path: PathBuf, to_package: &Package) -> Result<(), JmError> {
+        match to_package {
+            Package::NpmPackage(npm_package) => {
+                let original = self.package_code_path(&npm_package);
+                let link = package_root_path
+                    .join("node_modules")
+                    .join(&npm_package.name);
+
+                if let Err(err) = symlink(&original, &link) {
+                    if err.kind() != ErrorKind::AlreadyExists {
+                        return Err(JmError::new(format!(
+                            "Failed to link package {:?}->{:?} {}",
+                            link,
+                            original,
+                            err.to_string()
+                        )));
+                    }
+                }
+            }
+            Package::WorkspacePackage(workspace_package) => {
+                debug!("Not linking workspace package {:?}", workspace_package)
+            }
+        }
+
+        Ok(())
     }
 }
 
