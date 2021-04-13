@@ -29,6 +29,8 @@ impl<'a> Writer<'a> {
         })
     }
 
+    // TODO: handle .bin scripts
+    // TODO: handle native modules
     pub async fn write(
         &self,
         starting_nodes: Vec<NodeIndex>,
