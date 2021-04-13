@@ -37,7 +37,7 @@ impl<'a> TarDownloader<'a> {
         tarball_name: &str,
     ) -> Result<PathBuf, JmError> {
         let response = self.client.get(&package.tarball_url).send().await?;
-        let content = response.bytes().await?;
+        let content = response.text().await?;
 
         let archive_path = self.cache.set(tarball_name, content)?;
 

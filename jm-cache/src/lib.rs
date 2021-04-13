@@ -4,6 +4,8 @@ use directories::ProjectDirs;
 use errors::JmCacheError;
 use jm_common::sanitize_package_name;
 use std::fs;
+use std::fs::File;
+use std::io::copy;
 use std::path::PathBuf;
 
 pub struct Cache {
@@ -12,7 +14,7 @@ pub struct Cache {
 
 impl Cache {
     pub fn new(cache_group: String, cache_name: &str) -> Result<Cache, JmCacheError> {
-        match ProjectDirs::from("com", &cache_group, "jm") {
+        match ProjectDirs::from("com", "jm", &cache_group) {
             Some(project_dirs) => {
                 let cache_dir = project_dirs.cache_dir().to_path_buf().join(cache_name);
 
@@ -35,10 +37,13 @@ impl Cache {
         }
     }
 
-    pub fn set<C: AsRef<[u8]>>(&self, key: &str, value: C) -> Result<PathBuf, JmCacheError> {
+    pub fn set(&self, key: &str, value: String) -> Result<PathBuf, JmCacheError> {
         let key_path = self.cache_dir.join(sanitize_package_name(key));
+        let mut file = File::create(&key_path)?;
 
-        fs::write(key_path.clone(), value.as_ref())?;
+        copy(&mut value.as_bytes(), &mut file)?;
+
+        // fs::write(key_path.clone(), value.as_ref())?;
 
         Ok(key_path)
     }

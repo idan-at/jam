@@ -14,6 +14,7 @@ pub struct Opts {
     pub command: Command,
     #[clap(short, long, about = "Turn on debug mode")]
     pub debug: bool,
+    #[clap(hidden = true, default_value = "jm")]
     pub cache_group: String,
 }
 
