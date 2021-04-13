@@ -49,7 +49,7 @@ impl<'a> Writer<'a> {
     async fn write_package(
         &self,
         package: &Package,
-        neighbors: Vec<&Package>,
+        dependencies: Vec<&Package>,
     ) -> Result<(), JmError> {
         match package {
             Package::NpmPackage(npm_package) => {
@@ -64,15 +64,16 @@ impl<'a> Writer<'a> {
                         .download_to(&npm_package, &package_files_path)
                         .await?;
 
-                    for neighbor in neighbors {
-                        self.create_link(path.clone(), neighbor)?;
+                    for dependency in dependencies {
+                        self.create_link(&path, dependency)?;
                     }
                 }
             }
             Package::WorkspacePackage(workspace_package) => {
-                debug!("Ignoring workspace package {:?}", workspace_package);
-
                 fs::create_dir_all(&workspace_package.base_path.join("node_modules"))?;
+                for dependency in dependencies {
+                    self.create_link(&workspace_package.base_path, dependency)?;
+                }
             }
         }
 
@@ -95,7 +96,7 @@ impl<'a> Writer<'a> {
             .join(&package.name)
     }
 
-    fn create_link(&self, package_root_path: PathBuf, to_package: &Package) -> Result<(), JmError> {
+    fn create_link(&self, package_root_path: &Path, to_package: &Package) -> Result<(), JmError> {
         match to_package {
             Package::NpmPackage(npm_package) => {
                 let original = self.package_code_path(&npm_package);
@@ -135,7 +136,9 @@ mod tests {
     use maplit::hashmap;
     use tempdir::TempDir;
 
-    fn create_graph() -> (Vec<NodeIndex>, Graph<Package, ()>) {
+    fn create_context() -> (Vec<NodeIndex>, Vec<WorkspacePackage>, Graph<Package, ()>, TempDir) {
+        let tmp_dir = TempDir::new("jm-writer").unwrap();
+
         let npm_package = Package::NpmPackage(NpmPackage::new(
             "p1".to_string(),
             "1.0.0".to_string(),
@@ -152,7 +155,7 @@ mod tests {
             "shasum".to_string(),
             "tarball-url".to_string(),
         ));
-        let workspace_package = Package::WorkspacePackage(WorkspacePackage::new(
+        let workspace_package_inner = WorkspacePackage::new(
             "workspace_package".to_string(),
             "1.0.0".to_string(),
             Some(hashmap! {
@@ -160,17 +163,20 @@ mod tests {
                 "@scope/p1".to_string() => "2.0.0".to_string(),
             }),
             None,
-            PathBuf::new(),
-        ));
-        let workspace_package2 = Package::WorkspacePackage(WorkspacePackage::new(
+            tmp_dir.path().join("wp1"),
+        );
+        let workspace_package = Package::WorkspacePackage(workspace_package_inner.clone());
+        let workspace_package2_inner = WorkspacePackage::new(
             "workspace_package2".to_string(),
             "1.0.0".to_string(),
             Some(hashmap! {
                 "p1".to_string() => "1.0.0".to_string(),
+                "workspace_package".to_string() => "1.0.0".to_string(),
             }),
             None,
-            PathBuf::new(),
-        ));
+            tmp_dir.path().join("wp2"),
+        );
+        let workspace_package2 = Package::WorkspacePackage(workspace_package2_inner.clone());
 
         let mut graph: Graph<Package, ()> = Graph::new();
         let npm_package_node = graph.add_node(npm_package);
@@ -182,8 +188,9 @@ mod tests {
         graph.add_edge(workspace_package_node, scoped_npm_package_node, ());
         graph.add_edge(scoped_npm_package_node, npm_package_node, ());
         graph.add_edge(workspace_package2_node, npm_package_node, ());
+        graph.add_edge(workspace_package2_node, workspace_package_node, ());
 
-        (vec![workspace_package_node, workspace_package2_node], graph)
+        (vec![workspace_package_node, workspace_package2_node], vec![workspace_package_inner, workspace_package2_inner], graph, tmp_dir)
     }
 
     #[test]
@@ -214,12 +221,10 @@ mod tests {
                 Err(JmError::new(String::from("Failing downloader")))
             }
         }
-
-        let tmp_dir = TempDir::new("jm-writer").unwrap();
         let downloader = FailingDownloader {};
-        let writer = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
 
-        let (starting_nodes, graph) = create_graph();
+        let (starting_nodes, _, graph, tmp_dir) = create_context();
+        let writer = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
 
         let result = writer.write(starting_nodes, &graph).await;
 
@@ -241,12 +246,10 @@ mod tests {
                 Ok(())
             }
         }
-
-        let tmp_dir = TempDir::new("jm-writer").unwrap();
         let downloader = DummyDownloader {};
-        let writer = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
 
-        let (starting_nodes, graph) = create_graph();
+        let (starting_nodes, workspace_packages, graph, tmp_dir) = create_context();
+        let writer = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
 
         let result = writer.write(starting_nodes, &graph).await;
 
@@ -276,12 +279,48 @@ mod tests {
         )
         .unwrap();
 
+        let expected_workspace_package_to_package_link_path = fs::read_link(
+            workspace_packages[0].base_path.clone()
+                .join("node_modules")
+                .join("p1")
+        )
+        .unwrap();
+        let expected_workspace_package_to_scoped_package_link_path = fs::read_link(
+            workspace_packages[0].base_path.clone()
+                .join("node_modules")
+                .join("@scope")
+                .join("p1")
+        )
+        .unwrap();
+
+        let expected_workspace_package2_to_package_link_path = fs::read_link(
+            workspace_packages[1].base_path.clone()
+                .join("node_modules")
+                .join("p1")
+        ).unwrap();
+
         assert_eq!(result, Ok(()));
+
         assert!(expected_package_path.exists());
+        assert!(expected_scoped_package_path.exists());
+
         assert_eq!(
             expected_scoped_package_to_package_link_path,
             expected_package_path.parent().unwrap()
         );
-        assert!(expected_scoped_package_path.exists());
+
+        assert_eq!(
+            expected_workspace_package_to_package_link_path,
+            expected_package_path.parent().unwrap()
+        );
+        assert_eq!(
+            expected_workspace_package_to_scoped_package_link_path,
+            expected_scoped_package_path.parent().unwrap()
+        );
+
+        assert_eq!(
+            expected_workspace_package2_to_package_link_path,
+            expected_package_path.parent().unwrap()
+        );
     }
 }
