@@ -75,6 +75,8 @@ async fn fails_when_resolver_fails() {
 #[tokio::test]
 async fn returns_monorepo_graph() {
     let base = vec![
+        // TODO: test links when its the same major
+        // TODO: test no links links when its the a different major
         Package::WorkspacePackage(WorkspacePackage::new(
             "p1".to_string(),
             "1.0.0".to_string(),
