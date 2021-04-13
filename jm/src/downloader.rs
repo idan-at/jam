@@ -1,7 +1,7 @@
 use crate::archiver::Archiver;
 use crate::errors::JmError;
 use async_trait::async_trait;
-use jm_cache::{CacheFactory, Cache};
+use jm_cache::{Cache, CacheFactory};
 use jm_core::package::NpmPackage;
 use log::{debug, info};
 use reqwest::Client;
@@ -21,7 +21,10 @@ pub struct TarDownloader<'a> {
 }
 
 impl<'a> TarDownloader<'a> {
-    pub fn new(cache_factory: &CacheFactory, archiver: &'a dyn Archiver) -> Result<TarDownloader<'a>, JmError> {
+    pub fn new(
+        cache_factory: &CacheFactory,
+        archiver: &'a dyn Archiver,
+    ) -> Result<TarDownloader<'a>, JmError> {
         let cache = cache_factory.create_cache("tarballs")?;
 
         Ok(TarDownloader {

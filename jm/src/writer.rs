@@ -81,11 +81,11 @@ impl<'a> Writer<'a> {
 
 #[cfg(test)]
 mod tests {
-    use jm_cache::CacheFactory;
-use super::*;
+    use super::*;
     use crate::archiver::DefaultArchiver;
     use crate::downloader::TarDownloader;
     use async_trait::async_trait;
+    use jm_cache::CacheFactory;
     use jm_core::package::WorkspacePackage;
     use maplit::hashmap;
     use tempdir::TempDir;

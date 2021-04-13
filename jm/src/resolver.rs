@@ -1,10 +1,10 @@
-use jm_core::npm::Fetcher;
-use jm_core::npm::PackageMetadata;
 use async_trait::async_trait;
 use dashmap::DashMap;
 use dashmap::DashSet;
 use jm_core::dependency::Dependency;
 use jm_core::errors::JmCoreError;
+use jm_core::npm::Fetcher;
+use jm_core::npm::PackageMetadata;
 use jm_core::package::NpmPackage;
 use jm_core::package::Package;
 use jm_core::resolver::PackageResolver;
@@ -23,7 +23,7 @@ pub struct Resolver<'a> {
 struct ResolverHelper {}
 
 // TODO: Move to core
-impl <'a> Resolver<'a> {
+impl<'a> Resolver<'a> {
     pub fn new(fetcher: Fetcher<'a>) -> Resolver<'a> {
         Resolver {
             cache: DashMap::new(),
@@ -87,7 +87,7 @@ impl <'a> Resolver<'a> {
 }
 
 #[async_trait]
-impl <'a> PackageResolver for Resolver<'a> {
+impl<'a> PackageResolver for Resolver<'a> {
     async fn get<'b>(
         &self,
         requester: &str,

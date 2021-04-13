@@ -2,13 +2,13 @@ pub mod errors;
 
 use errors::JmCacheError;
 use jm_common::sanitize_package_name;
-use std::fs::File;
 use std::fs;
+use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
 
 pub struct CacheFactory {
-    cache_dir: PathBuf
+    cache_dir: PathBuf,
 }
 
 pub struct Cache {

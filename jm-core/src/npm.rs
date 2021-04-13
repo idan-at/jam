@@ -1,7 +1,7 @@
-use again::RetryPolicy;
-use jm_cache::{CacheFactory, Cache};
-use jm_common::sanitize_package_name;
 use crate::errors::JmCoreError;
+use again::RetryPolicy;
+use jm_cache::{Cache, CacheFactory};
+use jm_common::sanitize_package_name;
 use jm_npm_metadata::NpmPackageMetadata;
 use log::debug;
 use reqwest::header;
@@ -39,8 +39,11 @@ pub struct Fetcher<'a> {
     client: Client,
 }
 
-impl <'a> Fetcher<'a> {
-    pub fn new(cache_factory: &CacheFactory, registry: &'a str) -> Result<Fetcher<'a>, JmCoreError> {
+impl<'a> Fetcher<'a> {
+    pub fn new(
+        cache_factory: &CacheFactory,
+        registry: &'a str,
+    ) -> Result<Fetcher<'a>, JmCoreError> {
         let cache = cache_factory.create_cache("metadata")?;
 
         Ok(Fetcher {
