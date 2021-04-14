@@ -5,20 +5,20 @@ use std::process;
 
 use clap::Clap;
 
-use jm::cli_opts::Opts;
+use jm::cli_options::CliOptions;
 use jm::run;
 
 #[tokio::main]
 async fn main() {
     let cwd = current_dir().unwrap();
-    let opts: Opts = Opts::parse();
+    let options = CliOptions::parse();
     let _ = env_logger::builder()
-        .filter_module("jm", get_log_level(opts.debug))
+        .filter_module("jm", get_log_level(options.debug))
         .try_init();
 
-    debug!("Running command {} from {:?}", opts.command, cwd);
+    debug!("Running command {} from {:?}", options.command, cwd);
 
-    match run(cwd, opts).await {
+    match run(cwd, options).await {
         Ok(()) => println!("Done."),
         Err(err) => {
             eprintln!("{}", err);

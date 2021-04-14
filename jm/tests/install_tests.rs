@@ -1,7 +1,7 @@
 mod common;
 
 use common::*;
-use jm::cli_opts::{Command, Install, Opts};
+use jm::cli_options::{CliOptions, Command, Install};
 use jm::errors::JmError;
 use jm::run;
 use jm_test_utils::async_helpers::*;
@@ -19,14 +19,14 @@ fn setup() -> NpmMockServer {
 #[tokio::test]
 async fn fails_on_missing_manifest_file() {
     given_manifest_file_does_not_exist(|path| async move {
-        let opts = Opts {
+        let options = CliOptions {
             cache_group: String::from("tests"),
             registry: String::from("http://some/url"),
             command: Command::Install(Install {}),
             debug: false,
         };
 
-        let result = run(path.to_path_buf(), opts).await;
+        let result = run(path.to_path_buf(), options).await;
         let expected = Err(JmError::new(String::from(
             "Couldn't find root directory. Make sure jm.json exists",
         )));
@@ -39,14 +39,14 @@ async fn fails_on_missing_manifest_file() {
 #[tokio::test]
 async fn with_empty_mono_repo() {
     given_valid_manifest_file(|path| async move {
-        let opts = Opts {
+        let options = CliOptions {
             cache_group: String::from("tests"),
             registry: String::from("http://some/url"),
             command: Command::Install(Install {}),
             debug: false,
         };
 
-        let result = run(path.to_path_buf(), opts).await;
+        let result = run(path.to_path_buf(), options).await;
 
         assert_eq!(
             result,
@@ -97,14 +97,14 @@ async fn with_simple_mono_repo() {
     );
 
     given_mono_repo_with(contents, |path| async move {
-        let opts = Opts {
+        let options = CliOptions {
             cache_group: String::from("tests"),
             registry: String::from(npm_mock_server.url()),
             command: Command::Install(Install {}),
             debug: false,
         };
 
-        let result = run(path.to_path_buf(), opts).await;
+        let result = run(path.to_path_buf(), options).await;
 
         assert_eq!(result, Ok(()))
     })
@@ -152,14 +152,14 @@ async fn with_mono_repo_with_cyclic_dependencies() {
     );
 
     given_mono_repo_with(contents, |path| async move {
-        let opts = Opts {
+        let options = CliOptions {
             cache_group: String::from("tests"),
             registry: String::from(npm_mock_server.url()),
             command: Command::Install(Install {}),
             debug: false,
         };
 
-        let result = run(path.to_path_buf(), opts).await;
+        let result = run(path.to_path_buf(), options).await;
 
         assert_eq!(result, Ok(()))
     })

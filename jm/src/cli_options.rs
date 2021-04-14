@@ -3,7 +3,7 @@ use std::fmt::{Display, Error, Formatter};
 
 #[derive(Clap)]
 #[clap(version = "0.0")]
-pub struct Opts {
+pub struct CliOptions {
     #[clap(
         long,
         default_value = "https://registry.npmjs.org",
