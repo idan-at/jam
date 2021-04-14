@@ -6,6 +6,7 @@ use jm_core::errors::JmCoreError;
 use jm_core::npm::Fetcher;
 use jm_core::package::NpmPackage;
 use jm_core::package::Package;
+use jm_core::package::WorkspacePackage;
 use jm_core::resolver::PackageResolver;
 use jm_core::resolver_helpers::{extract_dependency_version_req, resolve_version, version_matches};
 use log::{debug, info};
@@ -15,14 +16,19 @@ use std::ops::Deref;
 pub struct Resolver<'a> {
     cache: DashMap<String, DashSet<Package>>,
     fetcher: Fetcher<'a>,
+    workspace_packages: &'a Vec<WorkspacePackage>,
 }
 
-// TODO: Move to core, support searching packages in the workspace first
+// TODO: Move to core
 impl<'a> Resolver<'a> {
-    pub fn new(fetcher: Fetcher<'a>) -> Resolver<'a> {
+    pub fn new(
+        fetcher: Fetcher<'a>,
+        workspace_packages: &'a Vec<WorkspacePackage>,
+    ) -> Resolver<'a> {
         Resolver {
             cache: DashMap::new(),
             fetcher,
+            workspace_packages,
         }
     }
 
@@ -83,6 +89,16 @@ impl<'a> PackageResolver for Resolver<'a> {
         dependency: &'b Dependency,
     ) -> Result<(Package, &'b Dependency), JmCoreError> {
         let package_name = &dependency.real_name;
+
+        // TODO: skip link if its a different major version?
+        if let Some(workspace_package) = self
+            .workspace_packages
+            .iter()
+            .find(|workspace_package| &workspace_package.name == package_name)
+        {
+            let package = Package::WorkspacePackage(workspace_package.clone());
+            return Ok((package, dependency));
+        }
 
         match self.cache.get(package_name) {
             Some(packages_set) => {

@@ -64,7 +64,8 @@ async fn with_simple_mono_repo() {
     let contents = hashmap! {
         PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0", None),
         PathBuf::from("packages/p2") => with_package_json_file_content("p2", "1.0.0", Some(hashmap! {
-            "lib" => "~1.0.0"
+            "lib" => "~1.0.0",
+            "p1" => "~1.0.0",
         })),
     };
 
@@ -116,7 +117,8 @@ async fn with_mono_repo_with_cyclic_dependencies() {
     let contents = hashmap! {
         PathBuf::from("packages/p1") => with_package_json_file_content("p1", "1.0.0", None),
         PathBuf::from("packages/p2") => with_package_json_file_content("p2", "1.0.0", Some(hashmap! {
-            "lib" => "~1.0.0"
+            "lib" => "~1.0.0",
+            "p1" => "~1.0.0",
         })),
     };
 

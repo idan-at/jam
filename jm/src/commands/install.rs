@@ -16,7 +16,7 @@ pub async fn install(config: &Config) -> Result<(), JmError> {
         ProjectDirs::from("com", "jm", &config.cache_group).expect("Failed to locate project dir");
     let cache_factory = CacheFactory::new(project_dirs.cache_dir().to_path_buf());
     let fetcher = Fetcher::new(&cache_factory, &config.registry)?;
-    let resolver = Resolver::new(fetcher);
+    let resolver = Resolver::new(fetcher, &workspace.workspace_packages);
 
     let (starting_nodes, graph) = build_graph(workspace.packages(), &resolver).await?;
 
