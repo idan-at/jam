@@ -5,6 +5,7 @@ pub mod errors;
 pub mod npm;
 pub mod package;
 pub mod resolver;
+pub mod resolver_helpers;
 
 use crate::collector::Collector;
 use crate::dependency::Dependency;
