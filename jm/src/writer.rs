@@ -40,8 +40,9 @@ impl<'a> Writer<'a> {
             let mut dfs = Dfs::new(graph, node);
             while let Some(nx) = dfs.next(graph) {
                 let package = &graph[nx];
-                let neighbors: Vec<&Package> = graph.neighbors(nx).map(|n| &graph[n]).collect();
-                self.write_package(package, neighbors).await?;
+                let dependencies: Vec<&Package> = graph.neighbors(nx).map(|n| &graph[n]).collect();
+
+                self.write_package(package, dependencies).await?;
             }
         }
 
