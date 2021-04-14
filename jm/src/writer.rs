@@ -1,5 +1,6 @@
 use crate::downloader::Downloader;
 use crate::errors::JmError;
+use futures::StreamExt;
 use jm_common::sanitize_package_name;
 use jm_core::package::NpmPackage;
 use jm_core::package::Package;
@@ -11,6 +12,8 @@ use std::io::ErrorKind;
 use std::os::unix::fs::symlink;
 use std::path::Path;
 use std::path::PathBuf;
+
+const CONCURRENCY: usize = 20;
 
 pub struct Writer<'a> {
     store_path: PathBuf,
@@ -36,17 +39,25 @@ impl<'a> Writer<'a> {
         starting_nodes: Vec<NodeIndex>,
         graph: &Graph<Package, ()>,
     ) -> Result<(), JmError> {
+        let mut futures = vec![];
+
         for node in starting_nodes {
             let mut dfs = Dfs::new(graph, node);
             while let Some(nx) = dfs.next(graph) {
+                // TODO: We can skip already seen nodes
                 let package = &graph[nx];
                 let dependencies: Vec<&Package> = graph.neighbors(nx).map(|n| &graph[n]).collect();
 
-                self.write_package(package, dependencies).await?;
+                futures.push(self.write_package(package, dependencies));
             }
         }
 
-        Ok(())
+        futures::stream::iter(futures.into_iter())
+            .buffer_unordered(CONCURRENCY)
+            .collect::<Vec<Result<_, _>>>()
+            .await
+            .into_iter()
+            .collect::<Result<(), JmError>>()
     }
 
     async fn write_package(
