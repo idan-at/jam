@@ -10,6 +10,7 @@ mod resolver;
 mod root_locator;
 mod workspace;
 mod writer;
+mod store;
 
 use crate::cli_options::CliOptions;
 use crate::errors::JmError;

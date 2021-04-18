@@ -1,7 +1,7 @@
+use crate::store::Store;
 use crate::downloader::Downloader;
 use crate::errors::JmError;
 use futures::StreamExt;
-use jm_common::sanitize_package_name;
 use jm_core::package::NpmPackage;
 use jm_core::package::Package;
 use log::debug;
@@ -16,20 +16,16 @@ use std::path::PathBuf;
 const CONCURRENCY: usize = 20;
 
 pub struct Writer<'a> {
-    store_path: PathBuf,
+    store: &'a Store,
     downloader: &'a dyn Downloader,
 }
 
 impl<'a> Writer<'a> {
-    pub fn new(data_dir: &Path, downloader: &'a dyn Downloader) -> Result<Writer<'a>, JmError> {
-        let store_path = data_dir.join("store");
-
-        fs::create_dir_all(&store_path)?;
-
-        Ok(Writer {
-            store_path,
+    pub fn new(store: &'a Store, downloader: &'a dyn Downloader) -> Writer<'a> {
+        Writer {
+            store,
             downloader,
-        })
+        }
     }
 
     // TODO: handle .bin scripts
@@ -67,7 +63,7 @@ impl<'a> Writer<'a> {
     ) -> Result<(), JmError> {
         match package {
             Package::NpmPackage(npm_package) => {
-                let path = self.package_store_root_path(npm_package);
+                let path = self.store.package_path_in_store(npm_package);
                 let package_files_path = self.package_code_path(npm_package);
 
                 if !package_files_path.exists() {
@@ -94,18 +90,8 @@ impl<'a> Writer<'a> {
         Ok(())
     }
 
-    fn package_store_root_path(&self, package: &NpmPackage) -> PathBuf {
-        let package_dir_name = format!(
-            "{}@{}",
-            sanitize_package_name(&package.name),
-            package.version
-        );
-
-        self.store_path.join(package_dir_name)
-    }
-
     fn package_code_path(&self, package: &NpmPackage) -> PathBuf {
-        self.package_store_root_path(package)
+        self.store.package_path_in_store(package)
             .join("node_modules")
             .join(&package.name)
     }
@@ -221,7 +207,8 @@ mod tests {
 
         let archiver = DefaultArchiver::new();
         let downloader = TarDownloader::new(&cache_factory, &archiver).unwrap();
-        let _ = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
+        let store = Store::new(tmp_dir.as_ref()).unwrap();
+        let _ = Writer::new(&store, &downloader);
 
         let expected_path = tmp_dir.path().join("store");
 
@@ -245,7 +232,8 @@ mod tests {
         let downloader = FailingDownloader {};
 
         let (starting_nodes, _, graph, tmp_dir) = create_context();
-        let writer = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
+        let store = Store::new(tmp_dir.as_ref()).unwrap();
+        let writer = Writer::new(&store, &downloader);
 
         let result = writer.write(starting_nodes, &graph).await;
 
@@ -270,7 +258,8 @@ mod tests {
         let downloader = DummyDownloader {};
 
         let (starting_nodes, workspace_packages, graph, tmp_dir) = create_context();
-        let writer = Writer::new(tmp_dir.as_ref(), &downloader).unwrap();
+        let store = Store::new(tmp_dir.as_ref()).unwrap();
+        let writer = Writer::new(&store, &downloader);
 
         let result = writer.write(starting_nodes, &graph).await;
 

@@ -106,6 +106,7 @@ async fn with_simple_mono_repo() {
 
         let result = run(path.to_path_buf(), options).await;
 
+        // TODO: also test written files and links
         assert_eq!(result, Ok(()))
     })
     .await;
@@ -161,6 +162,7 @@ async fn with_mono_repo_with_cyclic_dependencies() {
 
         let result = run(path.to_path_buf(), options).await;
 
+        // TODO: also test written files and links
         assert_eq!(result, Ok(()))
     })
     .await;

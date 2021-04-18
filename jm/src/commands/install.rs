@@ -1,3 +1,4 @@
+use crate::store::Store;
 use crate::archiver::DefaultArchiver;
 use crate::downloader::TarDownloader;
 use crate::resolver::Resolver;
@@ -20,7 +21,8 @@ pub async fn install(config: &Config, project_dirs: &ProjectDirs) -> Result<(), 
 
     let archiver = DefaultArchiver::new();
     let downloader = TarDownloader::new(&cache_factory, &archiver)?;
-    let writer = Writer::new(project_dirs.data_dir(), &downloader)?;
+    let store = Store::new(project_dirs.data_dir())?;
+    let writer = Writer::new(&store, &downloader);
 
     writer.write(starting_nodes, &graph).await?;
 
