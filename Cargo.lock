@@ -1155,7 +1155,9 @@ dependencies = [
 name = "jm-npm-metadata"
 version = "0.1.0"
 dependencies = [
+ "maplit",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

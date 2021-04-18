@@ -89,6 +89,7 @@ mod tests {
             dist_tags: None,
             versions: hashmap! {
               "1.0.0".to_string() => NpmVersionMetadata {
+                bin: None,
                 dist: NpmDistMetadata {
                   shasum: String::from("some-shasum"),
                   tarball: String::from("some-tarball"),
@@ -119,6 +120,7 @@ mod tests {
             dist_tags: None,
             versions: hashmap! {
               "2.0.0".to_string() => NpmVersionMetadata {
+                bin: None,
                 dist: NpmDistMetadata {
                   shasum: String::from("some-shasum"),
                   tarball: String::from("some-tarball"),

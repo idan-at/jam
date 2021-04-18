@@ -12,6 +12,7 @@ pub fn with_npm_package_metadata(
         dist_tags,
         versions: hashmap! {
           version.to_string() => NpmVersionMetadata {
+            bin: None,
             dist: NpmDistMetadata {
               shasum: String::from("some-shasum"),
               tarball: tarball_url,
