@@ -15,7 +15,7 @@ use crate::cli_options::CliOptions;
 use crate::errors::JmError;
 use log::debug;
 use std::path::PathBuf;
-
+use directories::ProjectDirs;
 use cli_options::Command;
 use commands::install::install;
 use common::read_manifest_file;
@@ -34,7 +34,10 @@ pub async fn run(cwd: PathBuf, options: CliOptions) -> Result<(), JmError> {
     let config = Config::new(root_path, &manifest_file_content, &options.registry)?;
     debug!("Config {:?}", config);
 
+    let project_dirs = ProjectDirs::from("com", "jm", &config.cache_group).expect("Failed to locate project dir");
+    debug!("Project Dirs {:?}", config);
+
     match options.command {
-        Command::Install(_) | Command::I(_) => install(&config).await,
+        Command::Install(_) | Command::I(_) => install(&config, &project_dirs).await,
     }
 }

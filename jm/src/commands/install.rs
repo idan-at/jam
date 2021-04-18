@@ -10,10 +10,8 @@ use jm_cache::CacheFactory;
 use jm_core::build_graph;
 use jm_core::npm::Fetcher;
 
-pub async fn install(config: &Config) -> Result<(), JmError> {
+pub async fn install(config: &Config, project_dirs: &ProjectDirs) -> Result<(), JmError> {
     let workspace = Workspace::from_config(config)?;
-    let project_dirs =
-        ProjectDirs::from("com", "jm", &config.cache_group).expect("Failed to locate project dir");
     let cache_factory = CacheFactory::new(project_dirs.cache_dir().to_path_buf());
     let fetcher = Fetcher::new(&cache_factory, &config.registry)?;
     let resolver = Resolver::new(fetcher, &workspace.workspace_packages);
