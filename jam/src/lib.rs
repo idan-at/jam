@@ -35,7 +35,7 @@ pub async fn run(cwd: PathBuf, options: CliOptions) -> Result<(), JamError> {
     let config = Config::new(root_path, &manifest_file_content, &options.registry)?;
     debug!("Config {:?}", config);
 
-    let project_dirs = ProjectDirs::from("com", "jam", &config.cache_group).expect("Failed to locate project dir");
+    let project_dirs = ProjectDirs::from("com", "jam", &options.cache_group).expect("Failed to locate project dir");
     debug!("Project Dirs {:?}", config);
 
     match options.command {
