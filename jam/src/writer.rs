@@ -1,6 +1,6 @@
-use crate::store::Store;
 use crate::downloader::Downloader;
 use crate::errors::JamError;
+use crate::store::Store;
 use futures::StreamExt;
 use jam_core::package::NpmPackage;
 use jam_core::package::Package;
@@ -22,10 +22,7 @@ pub struct Writer<'a> {
 
 impl<'a> Writer<'a> {
     pub fn new(store: &'a Store, downloader: &'a dyn Downloader) -> Writer<'a> {
-        Writer {
-            store,
-            downloader,
-        }
+        Writer { store, downloader }
     }
 
     // TODO: handle .bin scripts
@@ -91,7 +88,8 @@ impl<'a> Writer<'a> {
     }
 
     fn package_code_path(&self, package: &NpmPackage) -> PathBuf {
-        self.store.package_path_in_store(package)
+        self.store
+            .package_path_in_store(package)
             .join("node_modules")
             .join(&package.name)
     }
@@ -249,7 +247,11 @@ mod tests {
 
         #[async_trait]
         impl Downloader for DummyDownloader {
-            async fn download_to(&self, _package: &NpmPackage, path: &Path) -> Result<(), JamError> {
+            async fn download_to(
+                &self,
+                _package: &NpmPackage,
+                path: &Path,
+            ) -> Result<(), JamError> {
                 fs::write(path.join("index.js"), "")?;
 
                 Ok(())

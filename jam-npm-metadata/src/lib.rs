@@ -5,7 +5,7 @@ use std::collections::HashMap;
 #[serde(untagged)]
 pub enum NpmBinMetadata {
     String(String),
-    Object(HashMap<String, String>)
+    Object(HashMap<String, String>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]

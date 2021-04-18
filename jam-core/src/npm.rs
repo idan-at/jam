@@ -2,6 +2,7 @@ use crate::errors::JamCoreError;
 use again::RetryPolicy;
 use jam_cache::{Cache, CacheFactory};
 use jam_common::sanitize_package_name;
+use jam_npm_metadata::NpmBinMetadata;
 use jam_npm_metadata::NpmPackageMetadata;
 use log::debug;
 use reqwest::header;
@@ -24,6 +25,7 @@ pub struct VersionMetadata {
     pub shasum: String,
     pub tarball: String,
     pub dependencies: HashMap<String, String>,
+    pub binaries: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -128,6 +130,8 @@ impl<'a> Fetcher<'a> {
                             (
                                 version.clone(),
                                 VersionMetadata {
+                                    binaries: self
+                                        .extract_binaries(&package_name, &npm_version_metadata.bin),
                                     shasum: npm_version_metadata.dist.shasum.clone(),
                                     tarball: npm_version_metadata.dist.tarball.clone(),
                                     dependencies: npm_version_metadata
@@ -147,5 +151,24 @@ impl<'a> Fetcher<'a> {
                 package_name, FETCH_METADATA_MAX_RETRIES
             )),
         }
+    }
+
+    fn extract_binaries(
+        &self,
+        package_name: &str,
+        bin: &Option<NpmBinMetadata>,
+    ) -> HashMap<String, String> {
+        let mut binaries = HashMap::new();
+
+        if let Some(bin) = bin {
+            match bin {
+                NpmBinMetadata::String(path) => {
+                    binaries.insert(package_name.to_string(), path.clone());
+                }
+                NpmBinMetadata::Object(object) => binaries.extend(object.clone()),
+            };
+        }
+
+        binaries
     }
 }

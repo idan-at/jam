@@ -8,7 +8,9 @@ use jam_core::package::NpmPackage;
 use jam_core::package::Package;
 use jam_core::package::WorkspacePackage;
 use jam_core::resolver::PackageResolver;
-use jam_core::resolver_helpers::{extract_dependency_version_req, resolve_version, version_matches};
+use jam_core::resolver_helpers::{
+    extract_dependency_version_req, resolve_version, version_matches,
+};
 use log::{debug, info};
 use std::iter::FromIterator;
 use std::ops::Deref;

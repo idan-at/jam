@@ -1,7 +1,7 @@
-use crate::store::Store;
 use crate::archiver::DefaultArchiver;
 use crate::downloader::TarDownloader;
 use crate::resolver::Resolver;
+use crate::store::Store;
 use crate::Config;
 use crate::JamError;
 use crate::Workspace;

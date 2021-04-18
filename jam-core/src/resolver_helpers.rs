@@ -85,6 +85,7 @@ mod tests {
             },
             versions: hashmap! {
                 version.clone() => VersionMetadata {
+                    binaries: hashmap! {},
                     shasum: "a-shasum".to_string(),
                     tarball: "a-tarball".to_string(),
                     dependencies: HashMap::new(),
@@ -116,6 +117,7 @@ mod tests {
             },
             versions: hashmap! {
                 version.clone() => VersionMetadata {
+                    binaries: hashmap! {},
                     shasum: "a-shasum".to_string(),
                     tarball: "a-tarball".to_string(),
                     dependencies: HashMap::new(),
@@ -153,6 +155,7 @@ mod tests {
             },
             versions: hashmap! {
                 "2.0.0".to_string() => VersionMetadata {
+                    binaries: hashmap! {},
                     shasum: "a-shasum".to_string(),
                     tarball: "a-tarball".to_string(),
                     dependencies: HashMap::new(),
@@ -187,16 +190,19 @@ mod tests {
             dist_tags: HashMap::new(),
             versions: hashmap! {
                 "1.0.0".to_string() => VersionMetadata {
+                    binaries: hashmap! {},
                     shasum: "a-shasum".to_string(),
                     tarball: "a-tarball".to_string(),
                     dependencies: HashMap::new(),
                 },
                 "1.0.1".to_string() => VersionMetadata {
+                    binaries: hashmap! {},
                     shasum: "a-shasum".to_string(),
                     tarball: "a-tarball".to_string(),
                     dependencies: HashMap::new(),
                 },
                 "2.0.0".to_string() => VersionMetadata {
+                    binaries: hashmap! {},
                     shasum: "a-shasum".to_string(),
                     tarball: "a-tarball".to_string(),
                     dependencies: HashMap::new(),
@@ -219,6 +225,7 @@ mod tests {
             dist_tags: HashMap::new(),
             versions: hashmap! {
                 "1.0.0".to_string() => VersionMetadata {
+                    binaries: hashmap! {},
                     shasum: "a-shasum".to_string(),
                     tarball: "a-tarball".to_string(),
                     dependencies: HashMap::new(),

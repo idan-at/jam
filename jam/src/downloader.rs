@@ -104,7 +104,11 @@ mod tests {
         struct FailingArchiver {}
 
         impl Archiver for FailingArchiver {
-            fn extract_to(&self, _tarball_path: &Path, _target_path: &Path) -> Result<(), JamError> {
+            fn extract_to(
+                &self,
+                _tarball_path: &Path,
+                _target_path: &Path,
+            ) -> Result<(), JamError> {
                 Err(JamError::new(String::from("Failing archiver")))
             }
         }

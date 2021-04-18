@@ -63,7 +63,9 @@ impl Workspace {
         }
 
         if workspace_packages.len() == 0 {
-            Err(JamError::new(format!("No packages were found in workspace")))
+            Err(JamError::new(format!(
+                "No packages were found in workspace"
+            )))
         } else {
             Ok(Workspace { workspace_packages })
         }
