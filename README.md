@@ -1,3 +1,3 @@
-# Jm
+# jam
 
-Jm is a cli for maintaining javascript monorepos.
+jam is a cli for maintaining javascript monorepos.

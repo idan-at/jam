@@ -1,10 +1,10 @@
 [workspace]
 
 members = [
-  "jm",
-  "jm-core",
-  "jm-test-utils",
-  "jm-npm-metadata",
-  "jm-cache",
-  "jm-common"
+  "jam",
+  "jam-core",
+  "jam-test-utils",
+  "jam-npm-metadata",
+  "jam-cache",
+  "jam-common"
 ]

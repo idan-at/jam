@@ -1,9 +1,0 @@
-[package]
-name = "jm-cache"
-version = "0.1.0"
-authors = ["Idan Attias <idana@wix.com>"]
-edition = "2018"
-
-[dependencies]
-jm-common = { path = "../jm-common" }
-jm-test-utils = { path = "../jm-test-utils" }

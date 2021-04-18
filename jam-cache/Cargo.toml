@@ -1,0 +1,9 @@
+[package]
+name = "jam-cache"
+version = "0.1.0"
+authors = ["Idan Attias <idana@wix.com>"]
+edition = "2018"
+
+[dependencies]
+jam-common = { path = "../jam-common" }
+jam-test-utils = { path = "../jam-test-utils" }
