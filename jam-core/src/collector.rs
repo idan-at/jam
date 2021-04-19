@@ -57,6 +57,7 @@ mod tests {
                 dependencies: vec![dep1.clone(), dep2.clone()],
                 shasum: String::from("shasum"),
                 tarball_url: String::from("tarball-url"),
+                binaries: vec![],
             }),
             Package::WorkspacePackage(WorkspacePackage {
                 base_path: PathBuf::new(),

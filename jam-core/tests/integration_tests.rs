@@ -112,6 +112,7 @@ async fn returns_monorepo_graph() {
             None,
             String::from("shasum"),
             String::from("tarball-url"),
+            vec![],
         )),
     );
     resolver.given(
@@ -128,6 +129,7 @@ async fn returns_monorepo_graph() {
             }),
             String::from("shasum"),
             String::from("tarball-url"),
+            vec![],
         )),
     );
     resolver.given(
@@ -142,6 +144,7 @@ async fn returns_monorepo_graph() {
             None,
             String::from("shasum"),
             String::from("tarball-url"),
+            vec![],
         )),
     );
 
@@ -183,6 +186,7 @@ async fn returns_monorepo_graph_when_it_has_cyclic_dependencies() {
             }),
             String::from("shasum"),
             String::from("tarball-url"),
+            vec![],
         )),
     );
     resolver.given(
@@ -199,6 +203,7 @@ async fn returns_monorepo_graph_when_it_has_cyclic_dependencies() {
             }),
             String::from("shasum"),
             String::from("tarball-url"),
+            vec![],
         )),
     );
 

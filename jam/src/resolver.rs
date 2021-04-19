@@ -4,6 +4,7 @@ use dashmap::DashSet;
 use jam_core::dependency::Dependency;
 use jam_core::errors::JamCoreError;
 use jam_core::npm::Fetcher;
+use jam_core::package::BinaryScript;
 use jam_core::package::NpmPackage;
 use jam_core::package::Package;
 use jam_core::package::WorkspacePackage;
@@ -14,6 +15,8 @@ use jam_core::resolver_helpers::{
 use log::{debug, info};
 use std::iter::FromIterator;
 use std::ops::Deref;
+use std::path::PathBuf;
+use std::str::FromStr;
 
 pub struct Resolver<'a> {
     cache: DashMap<String, DashSet<Package>>,
@@ -61,6 +64,11 @@ impl<'a> Resolver<'a> {
             Some(version_metadata.dependencies.clone()),
             version_metadata.shasum.clone(),
             version_metadata.tarball.clone(),
+            version_metadata
+                .binaries
+                .iter()
+                .map(|(k, v)| BinaryScript::new(k.to_string(), PathBuf::from_str(v).unwrap()))
+                .collect(),
         )))
     }
 

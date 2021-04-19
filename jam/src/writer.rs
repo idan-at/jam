@@ -2,7 +2,6 @@ use crate::downloader::Downloader;
 use crate::errors::JamError;
 use crate::store::Store;
 use futures::StreamExt;
-use jam_core::package::NpmPackage;
 use jam_core::package::Package;
 use log::debug;
 use petgraph::graph::{Graph, NodeIndex};
@@ -11,7 +10,6 @@ use std::fs;
 use std::io::ErrorKind;
 use std::os::unix::fs::symlink;
 use std::path::Path;
-use std::path::PathBuf;
 
 const CONCURRENCY: usize = 20;
 
@@ -60,8 +58,8 @@ impl<'a> Writer<'a> {
     ) -> Result<(), JamError> {
         match package {
             Package::NpmPackage(npm_package) => {
-                let path = self.store.package_path_in_store(npm_package);
-                let package_files_path = self.package_code_path(npm_package);
+                let path = self.store.package_root_path_in_store(npm_package);
+                let package_files_path = self.store.package_code_path_in_store(npm_package);
 
                 if !package_files_path.exists() {
                     debug!("Downloading {} to directory {:?}", &npm_package.name, &path);
@@ -87,16 +85,9 @@ impl<'a> Writer<'a> {
         Ok(())
     }
 
-    fn package_code_path(&self, package: &NpmPackage) -> PathBuf {
-        self.store
-            .package_path_in_store(package)
-            .join("node_modules")
-            .join(&package.name)
-    }
-
     fn create_link(&self, package_root_path: &Path, to_package: &Package) -> Result<(), JamError> {
         let original = match to_package {
-            Package::NpmPackage(npm_package) => self.package_code_path(&npm_package),
+            Package::NpmPackage(npm_package) => self.store.package_code_path_in_store(&npm_package),
             Package::WorkspacePackage(workspace_package) => workspace_package.base_path.clone(),
         };
 
@@ -104,6 +95,7 @@ impl<'a> Writer<'a> {
             .join("node_modules")
             .join(&to_package.name());
 
+        // TODO: move to a linker component
         fs::create_dir_all(link.parent().unwrap())?;
         if let Err(err) = symlink(&original, &link) {
             if err.kind() != ErrorKind::AlreadyExists {
@@ -127,6 +119,7 @@ mod tests {
     use crate::downloader::TarDownloader;
     use async_trait::async_trait;
     use jam_cache::CacheFactory;
+    use jam_core::package::NpmPackage;
     use jam_core::package::WorkspacePackage;
     use maplit::hashmap;
     use tempdir::TempDir;
@@ -145,6 +138,7 @@ mod tests {
             None,
             "shasum".to_string(),
             "tarball-url".to_string(),
+            vec![],
         ));
         let scoped_npm_package = Package::NpmPackage(NpmPackage::new(
             "@scope/p1".to_string(),
@@ -154,6 +148,7 @@ mod tests {
             }),
             "shasum".to_string(),
             "tarball-url".to_string(),
+            vec![],
         ));
         let workspace_package_inner = WorkspacePackage::new(
             "workspace_package".to_string(),

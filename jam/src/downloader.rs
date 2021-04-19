@@ -119,6 +119,7 @@ mod tests {
             None,
             "shasum".to_string(),
             format!("{}/tarball/{}", npm_mock_server.url(), "p1"),
+            vec![],
         );
         let path = PathBuf::new();
 
@@ -167,6 +168,7 @@ mod tests {
             None,
             "shasum".to_string(),
             format!("{}/tarball/{}", npm_mock_server.url(), "p1"),
+            vec![],
         );
         let scoped_package = NpmPackage::new(
             "@scoped/p1".to_string(),
@@ -174,6 +176,7 @@ mod tests {
             None,
             "shasum".to_string(),
             format!("{}/tarball/{}", npm_mock_server.url(), "%40scoped%2Fp2"),
+            vec![],
         );
 
         let archiver = MockArchiver::new();

@@ -4,12 +4,25 @@ use log::warn;
 use std::path::PathBuf;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub struct BinaryScript {
+    name: String,
+    path: PathBuf,
+}
+
+impl BinaryScript {
+    pub fn new(name: String, path: PathBuf) -> BinaryScript {
+        BinaryScript { name, path }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct NpmPackage {
     pub name: String,
     pub version: String,
     pub dependencies: Vec<Dependency>,
     pub shasum: String,
     pub tarball_url: String,
+    pub binaries: Vec<BinaryScript>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
@@ -28,6 +41,7 @@ impl NpmPackage {
         dependencies: Option<HashMap<String, String>>,
         shasum: String,
         tarball_url: String,
+        binaries: Vec<BinaryScript>,
     ) -> NpmPackage {
         NpmPackage {
             name,
@@ -35,6 +49,7 @@ impl NpmPackage {
             dependencies: to_dependencies_list(dependencies),
             shasum,
             tarball_url,
+            binaries,
         }
     }
 
@@ -132,6 +147,7 @@ mod tests {
             None,
             String::from("shasum"),
             String::from("tarball-url"),
+            vec![],
         ));
 
         let workspace_package = Package::WorkspacePackage(WorkspacePackage::new(
@@ -159,6 +175,7 @@ mod tests {
             }),
             String::from("shasum"),
             String::from("tarball-url"),
+            vec![],
         ));
 
         let mut expected = vec![
