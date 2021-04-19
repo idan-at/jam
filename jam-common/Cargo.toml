@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 jam-npm-metadata = { path = "../jam-npm-metadata" }
+maplit = "1.0.2"

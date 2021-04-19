@@ -5,7 +5,6 @@ pub fn sanitize_package_name(package_name: &str) -> String {
     package_name.replace("/", "_")
 }
 
-// TODO: test
 pub fn extract_binaries(
     package_name: &str,
     bin: &Option<NpmBinMetadata>,
@@ -27,6 +26,7 @@ pub fn extract_binaries(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use maplit::hashmap;
 
     #[test]
     fn sanitized_package_names() {
@@ -35,6 +35,44 @@ mod tests {
         assert_eq!(
             sanitize_package_name(package_name),
             String::from("@scope_name")
+        );
+    }
+
+    #[test]
+    fn extract_binaries_none() {
+        let package_name = "name";
+        let bin = None;
+
+        assert_eq!(
+            extract_binaries(&package_name, &bin),
+            hashmap! {}
+        );
+    }
+
+    #[test]
+    fn extract_binaries_string() {
+        let package_name = "name";
+        let bin = Some(NpmBinMetadata::String("./a.js".to_string()));
+
+        assert_eq!(
+            extract_binaries(&package_name, &bin),
+            hashmap! {
+                package_name.to_string() => "./a.js".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn extract_binaries_object() {
+        let package_name = "name";
+        let bin_object = hashmap! {
+            "script".to_string() => "./a.js".to_string(),
+        };
+        let bin = Some(NpmBinMetadata::Object(bin_object.clone()));
+
+        assert_eq!(
+            extract_binaries(&package_name, &bin),
+            bin_object
         );
     }
 }

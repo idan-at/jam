@@ -1098,6 +1098,7 @@ name = "jam-common"
 version = "0.1.0"
 dependencies = [
  "jam-npm-metadata",
+ "maplit",
 ]
 
 [[package]]
