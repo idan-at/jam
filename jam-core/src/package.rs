@@ -5,8 +5,8 @@ use std::path::PathBuf;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct BinaryScript {
-    name: String,
-    path: PathBuf,
+    pub name: String,
+    pub path: PathBuf,
 }
 
 impl BinaryScript {

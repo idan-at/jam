@@ -3,7 +3,9 @@ use crate::errors::JamError;
 use crate::store::Store;
 use futures::StreamExt;
 use jam_core::package::Package;
+use jam_core::package::WorkspacePackage;
 use log::debug;
+use path_abs::{PathAbs, PathInfo};
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::visit::Dfs;
 use std::fs;
@@ -23,7 +25,6 @@ impl<'a> Writer<'a> {
         Writer { store, downloader }
     }
 
-    // TODO: handle .bin scripts
     // TODO: handle native modules
     pub async fn write(
         &self,
@@ -78,6 +79,7 @@ impl<'a> Writer<'a> {
                 fs::create_dir_all(&workspace_package.base_path.join("node_modules"))?;
                 for dependency in dependencies {
                     self.create_link(&workspace_package.base_path, dependency)?;
+                    self.link_binaries(&workspace_package, dependency)?;
                 }
             }
         }
@@ -110,6 +112,48 @@ impl<'a> Writer<'a> {
 
         Ok(())
     }
+
+    fn link_binaries(
+        &self,
+        workspace_package: &WorkspacePackage,
+        to_package: &Package,
+    ) -> Result<(), JamError> {
+        let links_base_path = workspace_package
+            .base_path
+            .join("node_modules")
+            .join(".bin");
+
+        fs::create_dir_all(&links_base_path)?;
+
+        for binary in to_package.binaries() {
+            let link = links_base_path.join(&binary.name);
+            let original = match to_package {
+                Package::NpmPackage(npm_package) => self
+                    .store
+                    .package_code_path_in_store(&npm_package)
+                    .join(&binary.path),
+                Package::WorkspacePackage(workspace_package) => {
+                    workspace_package.base_path.join(&binary.path)
+                }
+            };
+            // TODO: handle errors
+            let original = PathAbs::new(original).unwrap();
+
+            // TODO: move to linker
+            if let Err(err) = symlink(&original, &link) {
+                if err.kind() != ErrorKind::AlreadyExists {
+                    return Err(JamError::new(format!(
+                        "Failed to link binary script {:?}->{:?} {}",
+                        link,
+                        original,
+                        err.to_string()
+                    )));
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -119,9 +163,12 @@ mod tests {
     use crate::downloader::TarDownloader;
     use async_trait::async_trait;
     use jam_cache::CacheFactory;
+    use jam_core::package::BinaryScript;
     use jam_core::package::NpmPackage;
     use jam_core::package::WorkspacePackage;
     use maplit::hashmap;
+    use std::path::PathBuf;
+    use std::str::FromStr;
     use tempdir::TempDir;
 
     fn create_context() -> (
@@ -138,7 +185,10 @@ mod tests {
             None,
             "shasum".to_string(),
             "tarball-url".to_string(),
-            vec![],
+            vec![BinaryScript::new(
+                "p1_script".to_string(),
+                PathBuf::from_str("./bin/p1_script.js").unwrap(),
+            )],
         ));
         let scoped_npm_package = Package::NpmPackage(NpmPackage::new(
             "@scope/p1".to_string(),
@@ -158,7 +208,10 @@ mod tests {
                 "@scope/p1".to_string() => "2.0.0".to_string(),
             }),
             None,
-            vec![],
+            vec![BinaryScript::new(
+                "workspace_package_script".to_string(),
+                PathBuf::from_str("./bin/ws_script.js").unwrap(),
+            )],
             tmp_dir.path().join("wp1"),
         );
         let workspace_package = Package::WorkspacePackage(workspace_package_inner.clone());
@@ -323,16 +376,47 @@ mod tests {
         )
         .unwrap();
 
+        let expected_workspace_package_to_package_bin_link_path = fs::read_link(
+            workspace_packages[0]
+                .base_path
+                .clone()
+                .join("node_modules")
+                .join(".bin")
+                .join("p1_script"),
+        )
+        .unwrap();
+        let expected_workspace_package2_to_package_bin_link_path = fs::read_link(
+            workspace_packages[1]
+                .base_path
+                .clone()
+                .join("node_modules")
+                .join(".bin")
+                .join("p1_script"),
+        )
+        .unwrap();
+        let expected_workspace_package2_to_workspace_package_bin_link_path = fs::read_link(
+            workspace_packages[1]
+                .base_path
+                .clone()
+                .join("node_modules")
+                .join(".bin")
+                .join("workspace_package_script"),
+        )
+        .unwrap();
+
         assert_eq!(result, Ok(()));
 
+        // Packages were successfully deployed
         assert!(expected_package_path.exists());
         assert!(expected_scoped_package_path.exists());
 
+        // Packages links were successfully created
         assert_eq!(
             expected_scoped_package_to_package_link_path,
             expected_package_path.parent().unwrap()
         );
 
+        // Workspace packages to packages links were successfully created
         assert_eq!(
             expected_workspace_package_to_package_link_path,
             expected_package_path.parent().unwrap()
@@ -342,6 +426,7 @@ mod tests {
             expected_scoped_package_path.parent().unwrap()
         );
 
+        // Workspace packages to workspace packages links were successfully created
         assert_eq!(
             expected_workspace_package2_to_package_link_path,
             expected_package_path.parent().unwrap()
@@ -349,6 +434,31 @@ mod tests {
         assert_eq!(
             expected_workspace_package2_to_workspace_package_link_path,
             workspace_packages[0].base_path
+        );
+
+        // Binary links were successfully created
+        assert_eq!(
+            expected_workspace_package_to_package_bin_link_path,
+            expected_package_path
+                .parent()
+                .unwrap()
+                .join("bin")
+                .join("p1_script.js")
+        );
+        assert_eq!(
+            expected_workspace_package2_to_package_bin_link_path,
+            expected_package_path
+                .parent()
+                .unwrap()
+                .join("bin")
+                .join("p1_script.js")
+        );
+        assert_eq!(
+            expected_workspace_package2_to_workspace_package_bin_link_path,
+            workspace_packages[0]
+                .base_path
+                .join("bin")
+                .join("ws_script.js")
         );
     }
 }

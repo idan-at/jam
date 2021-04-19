@@ -43,10 +43,7 @@ mod tests {
         let package_name = "name";
         let bin = None;
 
-        assert_eq!(
-            extract_binaries(&package_name, &bin),
-            hashmap! {}
-        );
+        assert_eq!(extract_binaries(&package_name, &bin), hashmap! {});
     }
 
     #[test]
@@ -70,9 +67,6 @@ mod tests {
         };
         let bin = Some(NpmBinMetadata::Object(bin_object.clone()));
 
-        assert_eq!(
-            extract_binaries(&package_name, &bin),
-            bin_object
-        );
+        assert_eq!(extract_binaries(&package_name, &bin), bin_object);
     }
 }
