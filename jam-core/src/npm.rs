@@ -1,7 +1,7 @@
 use crate::errors::JamCoreError;
 use again::RetryPolicy;
 use jam_cache::{Cache, CacheFactory};
-use jam_common::{extract_binaries, sanitize_package_name};
+use jam_common::extract_binaries;
 use jam_npm_metadata::NpmPackageMetadata;
 use log::debug;
 use reqwest::header;
@@ -76,7 +76,7 @@ impl<'a> Fetcher<'a> {
                 let metadata = self.get_package_metadata_from_npm(package_name).await?;
 
                 self.cache.set(
-                    &sanitize_package_name(package_name),
+                    package_name,
                     serde_json::to_string(&metadata).unwrap().as_bytes(),
                 )?;
 
