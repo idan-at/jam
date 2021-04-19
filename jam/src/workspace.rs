@@ -1,11 +1,15 @@
 use crate::common::read_manifest_file;
 use crate::config::Config;
 use crate::errors::JamError;
-use jam_core::package::{Package, WorkspacePackage};
-
 use globwalk::GlobWalkerBuilder;
+use jam_common::extract_binaries;
+use jam_core::package::BinaryScript;
+use jam_core::package::{Package, WorkspacePackage};
+use jam_npm_metadata::NpmBinMetadata;
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::path::PathBuf;
+use std::str::FromStr;
 
 const IGNORE_PATTERS: [&str; 1] = ["!**/node_modules/**"];
 
@@ -16,6 +20,7 @@ struct PackageJson {
     dependencies: Option<HashMap<String, String>>,
     #[serde(alias = "devDependencies")]
     dev_dependencies: Option<HashMap<String, String>>,
+    bin: Option<NpmBinMetadata>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -47,10 +52,16 @@ impl Workspace {
             let manifest_file_content = read_manifest_file(manifest_file_path.clone())?;
             match serde_json::from_str::<PackageJson>(&manifest_file_content) {
                 Ok(package_json) => workspace_packages.push(WorkspacePackage::new(
-                    package_json.name,
+                    package_json.name.clone(),
                     package_json.version,
                     package_json.dependencies,
                     package_json.dev_dependencies,
+                    extract_binaries(&package_json.name, &package_json.bin)
+                        .iter()
+                        .map(|(k, v)| {
+                            BinaryScript::new(k.to_string(), PathBuf::from_str(v).unwrap())
+                        })
+                        .collect(),
                     entry.path().parent().unwrap().to_path_buf(),
                 )),
                 Err(_) => {
@@ -169,6 +180,7 @@ mod tests {
                         version: String::from("1.0.0"),
                         dependencies: vec![],
                         dev_dependencies: vec![],
+                        binaries: vec![],
                     }]
                 })
             )
@@ -204,6 +216,7 @@ mod tests {
                             version: String::from("1.1.0"),
                             dependencies: vec![],
                             dev_dependencies: vec![],
+                            binaries: vec![],
                         },
                         WorkspacePackage {
                             base_path: path.join("packages").join("p1"),
@@ -211,6 +224,7 @@ mod tests {
                             version: String::from("1.0.0"),
                             dependencies: vec![],
                             dev_dependencies: vec![],
+                            binaries: vec![],
                         }
                     ]
                 })
@@ -246,6 +260,7 @@ mod tests {
                         version: String::from("1.0.0"),
                         dependencies: vec![],
                         dev_dependencies: vec![],
+                        binaries: vec![],
                     }]
                 })
             )
@@ -280,6 +295,7 @@ mod tests {
                         version: String::from("1.0.0"),
                         dependencies: vec![],
                         dev_dependencies: vec![],
+                        binaries: vec![],
                     }]
                 })
             )
@@ -296,6 +312,7 @@ mod tests {
                     version: String::from("1.0.0"),
                     dependencies: vec![],
                     dev_dependencies: vec![],
+                    binaries: vec![],
                 },
                 WorkspacePackage {
                     base_path: PathBuf::new(),
@@ -303,6 +320,7 @@ mod tests {
                     version: String::from("2.0.0"),
                     dependencies: vec![],
                     dev_dependencies: vec![],
+                    binaries: vec![],
                 },
             ],
         };

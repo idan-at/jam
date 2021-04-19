@@ -32,6 +32,7 @@ pub struct WorkspacePackage {
     pub version: String,
     pub dependencies: Vec<Dependency>,
     pub dev_dependencies: Vec<Dependency>,
+    pub binaries: Vec<BinaryScript>,
 }
 
 impl NpmPackage {
@@ -64,6 +65,7 @@ impl WorkspacePackage {
         version: String,
         dependencies: Option<HashMap<String, String>>,
         dev_dependencies: Option<HashMap<String, String>>,
+        binaries: Vec<BinaryScript>,
         base_path: PathBuf,
     ) -> WorkspacePackage {
         WorkspacePackage {
@@ -72,6 +74,7 @@ impl WorkspacePackage {
             version,
             dependencies: to_dependencies_list(dependencies),
             dev_dependencies: to_dependencies_list(dev_dependencies),
+            binaries,
         }
     }
 
@@ -132,22 +135,35 @@ impl Package {
             Package::WorkspacePackage(workspace_package) => workspace_package.dependencies(),
         }
     }
+
+    pub fn binaries(&self) -> &Vec<BinaryScript> {
+        match self {
+            Package::NpmPackage(package) => &package.binaries,
+            Package::WorkspacePackage(workspace_package) => &workspace_package.binaries,
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use maplit::hashmap;
+    use std::str::FromStr;
 
     #[test]
-    fn exposes_name_and_version_getters() {
+    fn exposes_name_version_and_binaries_getters() {
+        let npm_binary_script =
+            BinaryScript::new("a".to_string(), PathBuf::from_str("./a.js").unwrap());
+        let workspace_binary_script =
+            BinaryScript::new("b".to_string(), PathBuf::from_str("./b.js").unwrap());
+
         let npm_package = Package::NpmPackage(NpmPackage::new(
             String::from("some-npm-package"),
             String::from("1.0.0"),
             None,
             String::from("shasum"),
             String::from("tarball-url"),
-            vec![],
+            vec![npm_binary_script.clone()],
         ));
 
         let workspace_package = Package::WorkspacePackage(WorkspacePackage::new(
@@ -155,13 +171,16 @@ mod tests {
             String::from("2.0.0"),
             None,
             None,
+            vec![workspace_binary_script.clone()],
             PathBuf::new(),
         ));
 
         assert_eq!(npm_package.name(), "some-npm-package");
         assert_eq!(npm_package.version(), "1.0.0");
+        assert_eq!(npm_package.binaries(), &vec![npm_binary_script]);
         assert_eq!(workspace_package.name(), "some-workspace-package");
         assert_eq!(workspace_package.version(), "2.0.0");
+        assert_eq!(workspace_package.binaries(), &vec![workspace_binary_script],);
     }
 
     #[test]
@@ -210,6 +229,7 @@ mod tests {
             Some(hashmap! {
                 "lol".to_string() => "npm:lodash@~2.0.0".to_string()
             }),
+            vec![],
             PathBuf::new(),
         ));
 
@@ -240,6 +260,7 @@ mod tests {
             Some(hashmap! {
                 "lodash".to_string() => "~2.0.0".to_string()
             }),
+            vec![],
             PathBuf::new(),
         ));
 

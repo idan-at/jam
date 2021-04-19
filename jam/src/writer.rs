@@ -158,6 +158,7 @@ mod tests {
                 "@scope/p1".to_string() => "2.0.0".to_string(),
             }),
             None,
+            vec![],
             tmp_dir.path().join("wp1"),
         );
         let workspace_package = Package::WorkspacePackage(workspace_package_inner.clone());
@@ -169,6 +170,7 @@ mod tests {
                 "workspace_package".to_string() => "1.0.0".to_string(),
             }),
             None,
+            vec![],
             tmp_dir.path().join("wp2"),
         );
         let workspace_package2 = Package::WorkspacePackage(workspace_package2_inner.clone());

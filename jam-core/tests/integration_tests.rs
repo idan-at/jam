@@ -59,6 +59,7 @@ async fn fails_when_resolver_fails() {
           "dep1".to_string() => "1.0.0".to_string()
         }),
         None,
+        vec![],
         PathBuf::new(),
     ))];
     let resolver = FailingResolver {};
@@ -86,6 +87,7 @@ async fn returns_monorepo_graph() {
             Some(hashmap! {
               "dep2".to_string() => "1.0.0".to_string()
             }),
+            vec![],
             PathBuf::new(),
         )),
         Package::WorkspacePackage(WorkspacePackage::new(
@@ -95,6 +97,7 @@ async fn returns_monorepo_graph() {
             Some(hashmap! {
               "dep2".to_string() => "1.0.0".to_string()
             }),
+            vec![],
             PathBuf::new(),
         )),
     ];
@@ -168,6 +171,7 @@ async fn returns_monorepo_graph_when_it_has_cyclic_dependencies() {
           "dep1".to_string() => "1.0.0".to_string()
         }),
         None,
+        vec![],
         PathBuf::new(),
     ))];
     let mut resolver = MockResolver::new();

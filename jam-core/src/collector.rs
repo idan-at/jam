@@ -65,6 +65,7 @@ mod tests {
                 version: "1.0.0".to_string(),
                 dependencies: vec![dep2.clone()],
                 dev_dependencies: vec![],
+                binaries: vec![],
             }),
         ];
 
